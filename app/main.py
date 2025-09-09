@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.api import api_router
 from app.core.config import settings
 from app.core.database import create_tables, get_db
-from app.core.seed_data import seed_dropdown_values
+from app.core.seed_data import seed_dropdown_values, seed_sample_risks
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -28,10 +28,11 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 def startup_event():
     """Initialize database on startup."""
     create_tables()
-    # Seed dropdown values
+    # Seed dropdown values and sample risks
     db = next(get_db())
     try:
         seed_dropdown_values(db)
+        seed_sample_risks(db)
     finally:
         db.close()
 

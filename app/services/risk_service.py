@@ -17,16 +17,59 @@ class RiskService:
         limit: int = 100,
         category: str | None = None,
         status: str | None = None,
+        search: str | None = None,
+        sort_by: str | None = None,
+        sort_order: str = "asc",
     ) -> list[Risk]:
-        """Get risks with optional filtering."""
+        """Get risks with optional filtering, searching, and sorting."""
         query = self.db.query(Risk)
 
+        # Apply filters
         if category:
             query = query.filter(Risk.risk_category == category)
         if status:
             query = query.filter(Risk.risk_status == status)
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                Risk.risk_title.ilike(search_term) | Risk.risk_description.ilike(search_term)
+            )
+
+        # Apply sorting
+        if sort_by:
+            sort_column = getattr(Risk, sort_by, None)
+            if sort_column is not None:
+                if sort_order.lower() == "desc":
+                    query = query.order_by(sort_column.desc())
+                else:
+                    query = query.order_by(sort_column.asc())
+        else:
+            # Default sorting by current risk rating (highest first), then by risk_id
+            query = query.order_by(Risk.current_risk_rating.desc(), Risk.risk_id)
 
         return query.offset(skip).limit(limit).all()
+
+    def get_risks_count(
+        self,
+        category: str | None = None,
+        status: str | None = None,
+        search: str | None = None,
+    ) -> int:
+        """Get total count of risks with same filtering as get_risks."""
+        query = self.db.query(Risk)
+
+        # Apply same filters as get_risks
+        if category:
+            query = query.filter(Risk.risk_category == category)
+        if status:
+            query = query.filter(Risk.risk_status == status)
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                Risk.risk_title.ilike(search_term) | Risk.risk_description.ilike(search_term)
+            )
+
+        return query.count()
 
     def get_risk(self, risk_id: str) -> Risk | None:
         """Get a single risk by ID."""
@@ -56,6 +99,7 @@ class RiskService:
                 f"({self._get_risk_level(db_risk.current_risk_rating)})"
             ),
         )
+        self.db.commit()
 
         return db_risk
 
@@ -179,3 +223,21 @@ class RiskService:
 
         self.db.add(update_log)
         # Note: Don't commit here, let the caller handle it
+
+    def get_risk_updates(self, risk_id: str) -> list[RiskUpdate]:
+        """Get all update logs for a specific risk."""
+        return (
+            self.db.query(RiskUpdate)
+            .filter(RiskUpdate.risk_id == risk_id)
+            .order_by(RiskUpdate.update_date.desc(), RiskUpdate.created_at.desc())
+            .all()
+        )
+
+    def get_recent_risk_updates(self, limit: int = 50) -> list[RiskUpdate]:
+        """Get recent risk updates across all risks."""
+        return (
+            self.db.query(RiskUpdate)
+            .order_by(RiskUpdate.update_date.desc(), RiskUpdate.created_at.desc())
+            .limit(limit)
+            .all()
+        )

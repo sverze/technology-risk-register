@@ -1,6 +1,8 @@
+from datetime import date, timedelta
+from decimal import Decimal
 from sqlalchemy.orm import Session
 
-from app.models.risk import DropdownValue
+from app.models.risk import DropdownValue, Risk, RiskUpdate
 
 
 def seed_dropdown_values(db: Session) -> None:
@@ -68,4 +70,467 @@ def seed_dropdown_values(db: Session) -> None:
         )
         db.add(dropdown_value)
 
+    db.commit()
+
+
+def seed_sample_risks(db: Session) -> None:
+    """Seed the database with comprehensive sample risks for demonstration."""
+    
+    # Check if already seeded
+    if db.query(Risk).first():
+        return
+    
+    sample_risks = [
+        # Critical Cybersecurity Risk
+        {
+            "risk_id": "TR-2025-CYB-001",
+            "risk_title": "Advanced Persistent Threat (APT) Attack",
+            "risk_description": "Sophisticated nation-state actors targeting critical infrastructure with advanced malware and social engineering techniques. High potential for data exfiltration and system compromise.",
+            "risk_category": "Cybersecurity",
+            "risk_owner": "Sarah Chen",
+            "risk_owner_department": "Cybersecurity",
+            "technology_domain": "Security Systems",
+            "inherent_probability": 4,
+            "inherent_impact": 5,
+            "current_probability": 3,
+            "current_impact": 5,
+            "risk_status": "Active",
+            "risk_response_strategy": "Mitigate",
+            "planned_mitigations": "Implement zero-trust architecture, advanced threat detection, employee security training",
+            "preventative_controls_status": "Partial",
+            "preventative_controls_description": "Firewall, endpoint protection, access controls in place",
+            "detective_controls_status": "Adequate", 
+            "detective_controls_description": "SIEM, log monitoring, threat hunting capabilities",
+            "corrective_controls_status": "Adequate",
+            "corrective_controls_description": "Incident response plan, backup/recovery procedures",
+            "control_gaps": "Limited zero-trust implementation, outdated endpoint detection",
+            "systems_affected": "Core financial systems, customer database, email infrastructure",
+            "ibs_impact": True,
+            "number_of_ibs_affected": 12,
+            "business_criticality": "Critical",
+            "financial_impact_low": Decimal("2500000.00"),
+            "financial_impact_high": Decimal("15000000.00"),
+            "rto_hours": 4,
+            "rpo_hours": 1,
+            "sla_impact": "Complete service outage for critical banking functions",
+            "slo_impact": "Customer transactions unavailable, regulatory reporting disrupted",
+            "date_identified": date.today() - timedelta(days=45),
+            "last_reviewed": date.today() - timedelta(days=7),
+            "next_review_date": date.today() + timedelta(days=14)
+        },
+        
+        # High Infrastructure Risk
+        {
+            "risk_id": "TR-2025-INF-002",
+            "risk_title": "Data Center Power System Failure",
+            "risk_description": "Primary data center UPS and backup generator systems approaching end-of-life with increasing failure rates. Single point of failure for critical systems.",
+            "risk_category": "Infrastructure",
+            "risk_owner": "Michael Rodriguez",
+            "risk_owner_department": "Operations",
+            "technology_domain": "Infrastructure",
+            "inherent_probability": 3,
+            "inherent_impact": 4,
+            "current_probability": 2,
+            "current_impact": 4,
+            "risk_status": "Active", 
+            "risk_response_strategy": "Mitigate",
+            "planned_mitigations": "UPS replacement project Q2 2025, implement N+1 redundancy",
+            "preventative_controls_status": "Adequate",
+            "preventative_controls_description": "Scheduled maintenance, environmental monitoring",
+            "detective_controls_status": "Adequate",
+            "detective_controls_description": "24/7 NOC monitoring, automated alerts",
+            "corrective_controls_status": "Partial",
+            "corrective_controls_description": "Emergency procedures, vendor SLAs for rapid response",
+            "control_gaps": "No automated failover to secondary site",
+            "systems_affected": "All primary data center hosted applications",
+            "ibs_impact": True,
+            "number_of_ibs_affected": 25,
+            "business_criticality": "Critical",
+            "financial_impact_low": Decimal("1000000.00"),
+            "financial_impact_high": Decimal("8000000.00"),
+            "rto_hours": 8,
+            "rpo_hours": 2,
+            "sla_impact": "Extended downtime for all digital banking services",
+            "slo_impact": "Customer-facing applications unavailable",
+            "date_identified": date.today() - timedelta(days=60),
+            "last_reviewed": date.today() - timedelta(days=14),
+            "next_review_date": date.today() + timedelta(days=30)
+        },
+        
+        # Critical Application Risk
+        {
+            "risk_id": "TR-2025-APP-003",
+            "risk_title": "Core Banking System End-of-Support",
+            "risk_description": "Legacy core banking system reaching vendor end-of-support in 18 months. No security patches or technical support will be available, creating significant operational and security risks.",
+            "risk_category": "Application",
+            "risk_owner": "Jennifer Park",
+            "risk_owner_department": "Information Technology",
+            "technology_domain": "Applications",
+            "inherent_probability": 5,
+            "inherent_impact": 5,
+            "current_probability": 4,
+            "current_impact": 4,
+            "risk_status": "Active",
+            "risk_response_strategy": "Avoid",
+            "planned_mitigations": "Core banking system modernization project, phased migration approach",
+            "preventative_controls_status": "Partial",
+            "preventative_controls_description": "Extended support contract through 2025, isolated network segment",
+            "detective_controls_status": "Adequate",
+            "detective_controls_description": "Enhanced monitoring, vulnerability scanning",
+            "corrective_controls_status": "Adequate",
+            "corrective_controls_description": "Business continuity plan, manual fallback procedures",
+            "control_gaps": "Limited ability to patch vulnerabilities after end-of-support",
+            "systems_affected": "Core banking platform, customer accounts, transaction processing",
+            "ibs_impact": True,
+            "number_of_ibs_affected": 35,
+            "business_criticality": "Critical",
+            "financial_impact_low": Decimal("5000000.00"),
+            "financial_impact_high": Decimal("25000000.00"),
+            "rto_hours": 12,
+            "rpo_hours": 4,
+            "sla_impact": "Complete disruption of banking operations",
+            "slo_impact": "All customer transactions and account services unavailable",
+            "date_identified": date.today() - timedelta(days=90),
+            "last_reviewed": date.today() - timedelta(days=21),
+            "next_review_date": date.today() + timedelta(days=7)
+        },
+        
+        # Medium Cloud Services Risk
+        {
+            "risk_id": "TR-2025-CLD-004",
+            "risk_title": "Cloud Provider Service Dependencies",
+            "risk_description": "Over-reliance on single cloud provider for critical services creates vendor lock-in and potential service disruption risks during provider outages.",
+            "risk_category": "Cloud Services",
+            "risk_owner": "David Kumar",
+            "risk_owner_department": "Information Technology",
+            "technology_domain": "Cloud Services",
+            "inherent_probability": 3,
+            "inherent_impact": 3,
+            "current_probability": 2,
+            "current_impact": 3,
+            "risk_status": "Monitoring",
+            "risk_response_strategy": "Transfer",
+            "planned_mitigations": "Multi-cloud strategy implementation, vendor SLA negotiations",
+            "preventative_controls_status": "Adequate",
+            "preventative_controls_description": "SLA monitoring, backup connectivity providers",
+            "detective_controls_status": "Adequate",
+            "detective_controls_description": "Service health dashboards, automated alerting",
+            "corrective_controls_status": "Partial",
+            "corrective_controls_description": "DR procedures documented, secondary region configured",
+            "control_gaps": "Limited multi-cloud capabilities, vendor dependency",
+            "systems_affected": "Customer portal, mobile banking, data analytics platform",
+            "ibs_impact": True,
+            "number_of_ibs_affected": 8,
+            "business_criticality": "High",
+            "financial_impact_low": Decimal("250000.00"),
+            "financial_impact_high": Decimal("1500000.00"),
+            "rto_hours": 6,
+            "rpo_hours": 2,
+            "sla_impact": "Reduced service availability during provider outages",
+            "slo_impact": "Customer-facing services degraded performance",
+            "date_identified": date.today() - timedelta(days=120),
+            "last_reviewed": date.today() - timedelta(days=30),
+            "next_review_date": date.today() + timedelta(days=45)
+        },
+        
+        # High Regulatory/Compliance Risk
+        {
+            "risk_id": "TR-2025-REG-005",
+            "risk_title": "Regulatory Data Privacy Compliance Gap",
+            "risk_description": "Current data handling practices may not fully comply with evolving privacy regulations. Potential for regulatory fines and mandatory system changes.",
+            "risk_category": "Regulatory/Compliance",
+            "risk_owner": "Lisa Thompson",
+            "risk_owner_department": "Legal/Compliance",
+            "technology_domain": "Data/Databases",
+            "inherent_probability": 4,
+            "inherent_impact": 4,
+            "current_probability": 3,
+            "current_impact": 3,
+            "risk_status": "Active",
+            "risk_response_strategy": "Mitigate",
+            "planned_mitigations": "Privacy impact assessment, data mapping project, consent management system",
+            "preventative_controls_status": "Partial",
+            "preventative_controls_description": "Privacy policies updated, staff training conducted",
+            "detective_controls_status": "Partial",
+            "detective_controls_description": "Data access logging, periodic compliance audits",
+            "corrective_controls_status": "Adequate",
+            "corrective_controls_description": "Data breach response plan, legal consultation process",
+            "control_gaps": "Incomplete data inventory, limited consent tracking",
+            "systems_affected": "Customer database, marketing systems, analytics platforms",
+            "ibs_impact": False,
+            "business_criticality": "High",
+            "financial_impact_low": Decimal("500000.00"),
+            "financial_impact_high": Decimal("5000000.00"),
+            "rto_hours": 24,
+            "rpo_hours": 8,
+            "sla_impact": "Potential service restrictions pending compliance remediation",
+            "slo_impact": "Data processing delays during compliance updates",
+            "date_identified": date.today() - timedelta(days=75),
+            "last_reviewed": date.today() - timedelta(days=14),
+            "next_review_date": date.today() + timedelta(days=21)
+        },
+        
+        # Medium Data Management Risk
+        {
+            "risk_id": "TR-2025-DAT-006",
+            "risk_title": "Data Quality and Integrity Issues",
+            "risk_description": "Inconsistent data quality across systems leading to reporting errors and regulatory compliance concerns. Legacy data migration issues persist.",
+            "risk_category": "Data Management",
+            "risk_owner": "Robert Johnson",
+            "risk_owner_department": "Information Technology", 
+            "technology_domain": "Data/Databases",
+            "inherent_probability": 3,
+            "inherent_impact": 3,
+            "current_probability": 2,
+            "current_impact": 2,
+            "risk_status": "Active",
+            "risk_response_strategy": "Mitigate",
+            "planned_mitigations": "Data governance program, automated data quality tools, master data management",
+            "preventative_controls_status": "Partial",
+            "preventative_controls_description": "Data validation rules, backup procedures",
+            "detective_controls_status": "Partial",
+            "detective_controls_description": "Data quality monitoring, exception reporting",
+            "corrective_controls_status": "Adequate",
+            "corrective_controls_description": "Data correction procedures, rollback capabilities",
+            "control_gaps": "Limited real-time data validation, manual processes",
+            "systems_affected": "Data warehouse, reporting systems, regulatory filings",
+            "ibs_impact": False,
+            "business_criticality": "Medium",
+            "financial_impact_low": Decimal("75000.00"),
+            "financial_impact_high": Decimal("400000.00"),
+            "rto_hours": 12,
+            "rpo_hours": 4,
+            "sla_impact": "Delayed reporting and analytics availability",
+            "slo_impact": "Reduced data accuracy for decision making",
+            "date_identified": date.today() - timedelta(days=100),
+            "last_reviewed": date.today() - timedelta(days=28),
+            "next_review_date": date.today() + timedelta(days=35)
+        },
+        
+        # Low Vendor/Third Party Risk
+        {
+            "risk_id": "TR-2025-VEN-007",
+            "risk_title": "Software Vendor Financial Stability",
+            "risk_description": "Secondary software vendor showing signs of financial distress. Potential for service discontinuation or acquisition affecting support quality.",
+            "risk_category": "Vendor/Third Party",
+            "risk_owner": "Amanda White",
+            "risk_owner_department": "Finance",
+            "technology_domain": "Applications",
+            "inherent_probability": 2,
+            "inherent_impact": 2,
+            "current_probability": 1,
+            "current_impact": 2,
+            "risk_status": "Monitoring",
+            "risk_response_strategy": "Accept",
+            "planned_mitigations": "Vendor assessment, alternative solution evaluation",
+            "preventative_controls_status": "Adequate",
+            "preventative_controls_description": "Contract terms include escrow provisions, regular vendor assessments",
+            "detective_controls_status": "Adequate",
+            "detective_controls_description": "Financial health monitoring, industry news tracking",
+            "corrective_controls_status": "Partial",
+            "corrective_controls_description": "Vendor transition plan documented, alternative vendors identified",
+            "control_gaps": "Limited source code escrow coverage",
+            "systems_affected": "Document management system, workflow automation",
+            "ibs_impact": False,
+            "business_criticality": "Low",
+            "financial_impact_low": Decimal("25000.00"),
+            "financial_impact_high": Decimal("150000.00"),
+            "rto_hours": 48,
+            "rpo_hours": 24,
+            "sla_impact": "Minor disruption to document processing workflows",
+            "slo_impact": "Temporary reduction in automation capabilities",
+            "date_identified": date.today() - timedelta(days=150),
+            "last_reviewed": date.today() - timedelta(days=45),
+            "next_review_date": date.today() + timedelta(days=60)
+        },
+        
+        # High Operational Risk
+        {
+            "risk_id": "TR-2025-OPS-008",
+            "risk_title": "Key Personnel Dependency",
+            "risk_description": "Critical system knowledge concentrated in small number of senior staff approaching retirement. Significant operational risk if key personnel unavailable.",
+            "risk_category": "Operational",
+            "risk_owner": "Thomas Garcia",
+            "risk_owner_department": "Operations",
+            "technology_domain": "Business Process",
+            "inherent_probability": 4,
+            "inherent_impact": 3,
+            "current_probability": 3,
+            "current_impact": 3,
+            "risk_status": "Active",
+            "risk_response_strategy": "Mitigate",
+            "planned_mitigations": "Knowledge transfer program, documentation project, cross-training initiative",
+            "preventative_controls_status": "Partial",
+            "preventative_controls_description": "Basic documentation exists, some cross-training completed",
+            "detective_controls_status": "Adequate",
+            "detective_controls_description": "Regular skills assessments, succession planning reviews",
+            "corrective_controls_status": "Partial",
+            "corrective_controls_description": "Contractor relationships for emergency support, extended notice periods",
+            "control_gaps": "Insufficient knowledge documentation, limited backup expertise",
+            "systems_affected": "Legacy mainframe systems, specialized trading platforms",
+            "ibs_impact": True,
+            "number_of_ibs_affected": 6,
+            "business_criticality": "High",
+            "financial_impact_low": Decimal("300000.00"),
+            "financial_impact_high": Decimal("2000000.00"),
+            "rto_hours": 16,
+            "rpo_hours": 6,
+            "sla_impact": "Extended resolution times for critical system issues",
+            "slo_impact": "Reduced system maintenance and optimization capabilities",
+            "date_identified": date.today() - timedelta(days=80),
+            "last_reviewed": date.today() - timedelta(days=20),
+            "next_review_date": date.today() + timedelta(days=25)
+        },
+        
+        # Medium Infrastructure Risk
+        {
+            "risk_id": "TR-2025-INF-009",
+            "risk_title": "Network Capacity Constraints",
+            "risk_description": "Core network infrastructure approaching capacity limits during peak usage periods. Potential for performance degradation and service disruption.",
+            "risk_category": "Infrastructure",
+            "risk_owner": "Karen Martinez",
+            "risk_owner_department": "Information Technology",
+            "technology_domain": "Network/Communications",
+            "inherent_probability": 3,
+            "inherent_impact": 2,
+            "current_probability": 2,
+            "current_impact": 2,
+            "risk_status": "Monitoring",
+            "risk_response_strategy": "Mitigate",
+            "planned_mitigations": "Network capacity expansion project, traffic optimization",
+            "preventative_controls_status": "Adequate",
+            "preventative_controls_description": "Capacity monitoring tools, traffic shaping policies",
+            "detective_controls_status": "Adequate",
+            "detective_controls_description": "Real-time bandwidth monitoring, performance alerts",
+            "corrective_controls_status": "Adequate",
+            "corrective_controls_description": "Traffic prioritization procedures, emergency capacity options",
+            "systems_affected": "All network-dependent applications and services",
+            "ibs_impact": True,
+            "number_of_ibs_affected": 15,
+            "business_criticality": "Medium",
+            "financial_impact_low": Decimal("100000.00"),
+            "financial_impact_high": Decimal("750000.00"),
+            "rto_hours": 4,
+            "rpo_hours": 1,
+            "sla_impact": "Reduced service performance during peak periods",
+            "slo_impact": "Slower transaction processing, user experience degradation",
+            "date_identified": date.today() - timedelta(days=65),
+            "last_reviewed": date.today() - timedelta(days=10),
+            "next_review_date": date.today() + timedelta(days=28)
+        },
+        
+        # Low Application Risk
+        {
+            "risk_id": "TR-2025-APP-010",
+            "risk_title": "Mobile App Performance Optimization",
+            "risk_description": "Customer mobile banking app experiencing minor performance issues with newer device models. Customer satisfaction impact but no security concerns.",
+            "risk_category": "Application",
+            "risk_owner": "Maria Rodriguez",
+            "risk_owner_department": "Business Units",
+            "technology_domain": "Applications",
+            "inherent_probability": 2,
+            "inherent_impact": 1,
+            "current_probability": 1,
+            "current_impact": 1,
+            "risk_status": "Active",
+            "risk_response_strategy": "Accept",
+            "planned_mitigations": "App optimization in next release cycle, user feedback monitoring",
+            "preventative_controls_status": "Adequate",
+            "preventative_controls_description": "Testing on multiple device types, performance monitoring",
+            "detective_controls_status": "Adequate",
+            "detective_controls_description": "App store reviews monitoring, user analytics",
+            "corrective_controls_status": "Adequate",
+            "corrective_controls_description": "Rapid patch deployment capability, user communication plan",
+            "systems_affected": "Mobile banking application",
+            "ibs_impact": False,
+            "business_criticality": "Low",
+            "financial_impact_low": Decimal("10000.00"),
+            "financial_impact_high": Decimal("50000.00"),
+            "rto_hours": 24,
+            "rpo_hours": 4,
+            "sla_impact": "Minor customer experience issues",
+            "slo_impact": "Slightly slower app performance on newer devices",
+            "date_identified": date.today() - timedelta(days=25),
+            "last_reviewed": date.today() - timedelta(days=5),
+            "next_review_date": date.today() + timedelta(days=40)
+        }
+    ]
+    
+    # Create Risk objects and add to database
+    created_risks = []
+    for risk_data in sample_risks:
+        risk = Risk(**risk_data)
+        risk.calculate_risk_ratings()
+        db.add(risk)
+        created_risks.append(risk)
+    
+    # Commit risks first
+    db.commit()
+    
+    # Add sample risk updates for some risks
+    sample_updates = [
+        # Update for critical cyber risk
+        {
+            "update_id": "UPD-TR-2025-CYB-001-01",
+            "risk_id": "TR-2025-CYB-001",
+            "update_date": date.today() - timedelta(days=30),
+            "updated_by": "Sarah Chen",
+            "update_type": "Risk Assessment Change",
+            "update_summary": "Risk rating increased due to new threat intelligence indicating targeting of our sector",
+            "previous_risk_rating": "12 (High)",
+            "new_risk_rating": "15 (Critical)"
+        },
+        {
+            "update_id": "UPD-TR-2025-CYB-001-02",
+            "risk_id": "TR-2025-CYB-001", 
+            "update_date": date.today() - timedelta(days=14),
+            "updated_by": "Sarah Chen",
+            "update_type": "Control Update",
+            "update_summary": "Implemented additional endpoint detection capabilities, slightly reducing exposure",
+            "previous_risk_rating": "15 (Critical)",
+            "new_risk_rating": "15 (Critical)"
+        },
+        
+        # Update for infrastructure risk
+        {
+            "update_id": "UPD-TR-2025-INF-002-01",
+            "risk_id": "TR-2025-INF-002",
+            "update_date": date.today() - timedelta(days=21),
+            "updated_by": "Michael Rodriguez", 
+            "update_type": "Status Change",
+            "update_summary": "UPS replacement project approved and scheduled for Q2 2025",
+            "previous_risk_rating": "12 (High)",
+            "new_risk_rating": "8 (Medium)"
+        },
+        
+        # Update for application risk
+        {
+            "update_id": "UPD-TR-2025-APP-003-01",
+            "risk_id": "TR-2025-APP-003",
+            "update_date": date.today() - timedelta(days=35),
+            "updated_by": "Jennifer Park",
+            "update_type": "Review/Reassessment", 
+            "update_summary": "Quarterly review completed. Migration timeline confirmed, risk level maintained",
+            "previous_risk_rating": "16 (Critical)",
+            "new_risk_rating": "16 (Critical)"
+        },
+        
+        # Update for operational risk
+        {
+            "update_id": "UPD-TR-2025-OPS-008-01",
+            "risk_id": "TR-2025-OPS-008",
+            "update_date": date.today() - timedelta(days=10),
+            "updated_by": "Thomas Garcia",
+            "update_type": "Control Update",
+            "update_summary": "Knowledge transfer sessions initiated with junior staff. Documentation project 40% complete",
+            "previous_risk_rating": "12 (High)",
+            "new_risk_rating": "9 (Medium)"
+        }
+    ]
+    
+    # Create RiskUpdate objects and add to database
+    for update_data in sample_updates:
+        update = RiskUpdate(**update_data)
+        db.add(update)
+    
     db.commit()

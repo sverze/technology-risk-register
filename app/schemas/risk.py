@@ -87,6 +87,22 @@ class RiskUpdateResponse(RiskUpdateBase):
         from_attributes = True
 
 
+class PaginationMetadata(BaseModel):
+    """Pagination metadata for list responses."""
+    total: int = Field(..., description="Total number of items")
+    page: int = Field(..., description="Current page number (1-based)")
+    per_page: int = Field(..., description="Number of items per page")
+    pages: int = Field(..., description="Total number of pages")
+    has_prev: bool = Field(..., description="Whether there is a previous page")
+    has_next: bool = Field(..., description="Whether there is a next page")
+
+
+class PaginatedRiskResponse(BaseModel):
+    """Paginated response for risk lists."""
+    items: list[Risk] = Field(..., description="List of risks")
+    pagination: PaginationMetadata = Field(..., description="Pagination metadata")
+
+
 class DropdownValueBase(BaseModel):
     category: str = Field(..., max_length=50)
     value: str = Field(..., max_length=100)

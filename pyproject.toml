@@ -97,4 +97,5 @@ skip_covered = false
 [dependency-groups]
 test = [
     "httpx>=0.28.1",
+    "requests>=2.28.0",
 ]

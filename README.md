@@ -92,6 +92,52 @@ uv run pytest tests/test_risks.py -v
 uv run pytest --cov=app --cov-fail-under=90
 ```
 
+### Integration Testing
+Integration tests verify end-to-end API functionality against a live server instance.
+
+```bash
+# Install test dependencies
+uv sync --group test
+
+# Start the API server (in separate terminal or background)
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Option 1: Use the test runner script (recommended)
+python run_integration_tests.py
+
+# Option 2: Test against custom URL
+python run_integration_tests.py --url http://localhost:8001
+
+# Option 3: Skip health check
+python run_integration_tests.py --no-health-check
+
+# Option 4: Direct pytest execution
+API_BASE_URL=http://localhost:8000 uv run pytest tests/integration/ -v
+```
+
+**Docker Integration Testing:**
+```bash
+# Start application with Docker
+docker-compose up -d
+
+# Run integration tests against Docker container
+python run_integration_tests.py --url http://localhost:8080
+
+# Clean up
+docker-compose down
+```
+
+**Test Coverage:**
+The integration tests verify:
+- Health and documentation endpoints
+- Dropdown values API (categories, filtering, grouping)
+- Dashboard data aggregation
+- Risk CRUD operations (create, read, update, delete)
+- Search functionality with case-insensitive matching
+- Sorting and pagination with validation
+- Risk update/audit trail endpoints
+- Comprehensive error handling (404, 405, 422)
+
 ### Database Management
 ```bash
 # Create new migration

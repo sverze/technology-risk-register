@@ -211,7 +211,7 @@ class DashboardService:
             func.avg(Risk.financial_impact_high)
         ).scalar()
 
-        return result if result else Decimal("0.00")
+        return Decimal(str(result)) if result else Decimal("0.00")
 
     def _get_high_financial_impact_risks(self, active_risks) -> int:
         """Get count of risks with financial impact > $1M."""
