@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./risk_register.db:/app/risk_register.db
+      - .:/app
+    environment:
+      - DATABASE_URL=sqlite:///./risk_register.db
+      - ALLOWED_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Placeholder for future frontend service
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   environment:
+  #     - REACT_APP_API_URL=http://localhost:8000
+  #   depends_on:
+  #     - backend
+
+volumes:
+  sqlite_data:
