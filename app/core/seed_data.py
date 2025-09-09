@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from decimal import Decimal
+
 from sqlalchemy.orm import Session
 
 from app.models.risk import DropdownValue, Risk, RiskUpdate
@@ -75,11 +76,11 @@ def seed_dropdown_values(db: Session) -> None:
 
 def seed_sample_risks(db: Session) -> None:
     """Seed the database with comprehensive sample risks for demonstration."""
-    
+
     # Check if already seeded
     if db.query(Risk).first():
         return
-    
+
     sample_risks = [
         # Critical Cybersecurity Risk
         {
@@ -99,7 +100,7 @@ def seed_sample_risks(db: Session) -> None:
             "planned_mitigations": "Implement zero-trust architecture, advanced threat detection, employee security training",
             "preventative_controls_status": "Partial",
             "preventative_controls_description": "Firewall, endpoint protection, access controls in place",
-            "detective_controls_status": "Adequate", 
+            "detective_controls_status": "Adequate",
             "detective_controls_description": "SIEM, log monitoring, threat hunting capabilities",
             "corrective_controls_status": "Adequate",
             "corrective_controls_description": "Incident response plan, backup/recovery procedures",
@@ -116,9 +117,8 @@ def seed_sample_risks(db: Session) -> None:
             "slo_impact": "Customer transactions unavailable, regulatory reporting disrupted",
             "date_identified": date.today() - timedelta(days=45),
             "last_reviewed": date.today() - timedelta(days=7),
-            "next_review_date": date.today() + timedelta(days=14)
+            "next_review_date": date.today() + timedelta(days=14),
         },
-        
         # High Infrastructure Risk
         {
             "risk_id": "TR-2025-INF-002",
@@ -132,7 +132,7 @@ def seed_sample_risks(db: Session) -> None:
             "inherent_impact": 4,
             "current_probability": 2,
             "current_impact": 4,
-            "risk_status": "Active", 
+            "risk_status": "Active",
             "risk_response_strategy": "Mitigate",
             "planned_mitigations": "UPS replacement project Q2 2025, implement N+1 redundancy",
             "preventative_controls_status": "Adequate",
@@ -154,9 +154,8 @@ def seed_sample_risks(db: Session) -> None:
             "slo_impact": "Customer-facing applications unavailable",
             "date_identified": date.today() - timedelta(days=60),
             "last_reviewed": date.today() - timedelta(days=14),
-            "next_review_date": date.today() + timedelta(days=30)
+            "next_review_date": date.today() + timedelta(days=30),
         },
-        
         # Critical Application Risk
         {
             "risk_id": "TR-2025-APP-003",
@@ -192,9 +191,8 @@ def seed_sample_risks(db: Session) -> None:
             "slo_impact": "All customer transactions and account services unavailable",
             "date_identified": date.today() - timedelta(days=90),
             "last_reviewed": date.today() - timedelta(days=21),
-            "next_review_date": date.today() + timedelta(days=7)
+            "next_review_date": date.today() + timedelta(days=7),
         },
-        
         # Medium Cloud Services Risk
         {
             "risk_id": "TR-2025-CLD-004",
@@ -230,9 +228,8 @@ def seed_sample_risks(db: Session) -> None:
             "slo_impact": "Customer-facing services degraded performance",
             "date_identified": date.today() - timedelta(days=120),
             "last_reviewed": date.today() - timedelta(days=30),
-            "next_review_date": date.today() + timedelta(days=45)
+            "next_review_date": date.today() + timedelta(days=45),
         },
-        
         # High Regulatory/Compliance Risk
         {
             "risk_id": "TR-2025-REG-005",
@@ -267,9 +264,8 @@ def seed_sample_risks(db: Session) -> None:
             "slo_impact": "Data processing delays during compliance updates",
             "date_identified": date.today() - timedelta(days=75),
             "last_reviewed": date.today() - timedelta(days=14),
-            "next_review_date": date.today() + timedelta(days=21)
+            "next_review_date": date.today() + timedelta(days=21),
         },
-        
         # Medium Data Management Risk
         {
             "risk_id": "TR-2025-DAT-006",
@@ -277,7 +273,7 @@ def seed_sample_risks(db: Session) -> None:
             "risk_description": "Inconsistent data quality across systems leading to reporting errors and regulatory compliance concerns. Legacy data migration issues persist.",
             "risk_category": "Data Management",
             "risk_owner": "Robert Johnson",
-            "risk_owner_department": "Information Technology", 
+            "risk_owner_department": "Information Technology",
             "technology_domain": "Data/Databases",
             "inherent_probability": 3,
             "inherent_impact": 3,
@@ -304,9 +300,8 @@ def seed_sample_risks(db: Session) -> None:
             "slo_impact": "Reduced data accuracy for decision making",
             "date_identified": date.today() - timedelta(days=100),
             "last_reviewed": date.today() - timedelta(days=28),
-            "next_review_date": date.today() + timedelta(days=35)
+            "next_review_date": date.today() + timedelta(days=35),
         },
-        
         # Low Vendor/Third Party Risk
         {
             "risk_id": "TR-2025-VEN-007",
@@ -341,9 +336,8 @@ def seed_sample_risks(db: Session) -> None:
             "slo_impact": "Temporary reduction in automation capabilities",
             "date_identified": date.today() - timedelta(days=150),
             "last_reviewed": date.today() - timedelta(days=45),
-            "next_review_date": date.today() + timedelta(days=60)
+            "next_review_date": date.today() + timedelta(days=60),
         },
-        
         # High Operational Risk
         {
             "risk_id": "TR-2025-OPS-008",
@@ -379,9 +373,8 @@ def seed_sample_risks(db: Session) -> None:
             "slo_impact": "Reduced system maintenance and optimization capabilities",
             "date_identified": date.today() - timedelta(days=80),
             "last_reviewed": date.today() - timedelta(days=20),
-            "next_review_date": date.today() + timedelta(days=25)
+            "next_review_date": date.today() + timedelta(days=25),
         },
-        
         # Medium Infrastructure Risk
         {
             "risk_id": "TR-2025-INF-009",
@@ -416,9 +409,8 @@ def seed_sample_risks(db: Session) -> None:
             "slo_impact": "Slower transaction processing, user experience degradation",
             "date_identified": date.today() - timedelta(days=65),
             "last_reviewed": date.today() - timedelta(days=10),
-            "next_review_date": date.today() + timedelta(days=28)
+            "next_review_date": date.today() + timedelta(days=28),
         },
-        
         # Low Application Risk
         {
             "risk_id": "TR-2025-APP-010",
@@ -452,10 +444,10 @@ def seed_sample_risks(db: Session) -> None:
             "slo_impact": "Slightly slower app performance on newer devices",
             "date_identified": date.today() - timedelta(days=25),
             "last_reviewed": date.today() - timedelta(days=5),
-            "next_review_date": date.today() + timedelta(days=40)
-        }
+            "next_review_date": date.today() + timedelta(days=40),
+        },
     ]
-    
+
     # Create Risk objects and add to database
     created_risks = []
     for risk_data in sample_risks:
@@ -463,10 +455,10 @@ def seed_sample_risks(db: Session) -> None:
         risk.calculate_risk_ratings()
         db.add(risk)
         created_risks.append(risk)
-    
+
     # Commit risks first
     db.commit()
-    
+
     # Add sample risk updates for some risks
     sample_updates = [
         # Update for critical cyber risk
@@ -478,43 +470,40 @@ def seed_sample_risks(db: Session) -> None:
             "update_type": "Risk Assessment Change",
             "update_summary": "Risk rating increased due to new threat intelligence indicating targeting of our sector",
             "previous_risk_rating": "12 (High)",
-            "new_risk_rating": "15 (Critical)"
+            "new_risk_rating": "15 (Critical)",
         },
         {
             "update_id": "UPD-TR-2025-CYB-001-02",
-            "risk_id": "TR-2025-CYB-001", 
+            "risk_id": "TR-2025-CYB-001",
             "update_date": date.today() - timedelta(days=14),
             "updated_by": "Sarah Chen",
             "update_type": "Control Update",
             "update_summary": "Implemented additional endpoint detection capabilities, slightly reducing exposure",
             "previous_risk_rating": "15 (Critical)",
-            "new_risk_rating": "15 (Critical)"
+            "new_risk_rating": "15 (Critical)",
         },
-        
         # Update for infrastructure risk
         {
             "update_id": "UPD-TR-2025-INF-002-01",
             "risk_id": "TR-2025-INF-002",
             "update_date": date.today() - timedelta(days=21),
-            "updated_by": "Michael Rodriguez", 
+            "updated_by": "Michael Rodriguez",
             "update_type": "Status Change",
             "update_summary": "UPS replacement project approved and scheduled for Q2 2025",
             "previous_risk_rating": "12 (High)",
-            "new_risk_rating": "8 (Medium)"
+            "new_risk_rating": "8 (Medium)",
         },
-        
         # Update for application risk
         {
             "update_id": "UPD-TR-2025-APP-003-01",
             "risk_id": "TR-2025-APP-003",
             "update_date": date.today() - timedelta(days=35),
             "updated_by": "Jennifer Park",
-            "update_type": "Review/Reassessment", 
+            "update_type": "Review/Reassessment",
             "update_summary": "Quarterly review completed. Migration timeline confirmed, risk level maintained",
             "previous_risk_rating": "16 (Critical)",
-            "new_risk_rating": "16 (Critical)"
+            "new_risk_rating": "16 (Critical)",
         },
-        
         # Update for operational risk
         {
             "update_id": "UPD-TR-2025-OPS-008-01",
@@ -524,13 +513,13 @@ def seed_sample_risks(db: Session) -> None:
             "update_type": "Control Update",
             "update_summary": "Knowledge transfer sessions initiated with junior staff. Documentation project 40% complete",
             "previous_risk_rating": "12 (High)",
-            "new_risk_rating": "9 (Medium)"
-        }
+            "new_risk_rating": "9 (Medium)",
+        },
     ]
-    
+
     # Create RiskUpdate objects and add to database
     for update_data in sample_updates:
         update = RiskUpdate(**update_data)
         db.add(update)
-    
+
     db.commit()

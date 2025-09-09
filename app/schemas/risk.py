@@ -89,6 +89,7 @@ class RiskUpdateResponse(RiskUpdateBase):
 
 class PaginationMetadata(BaseModel):
     """Pagination metadata for list responses."""
+
     total: int = Field(..., description="Total number of items")
     page: int = Field(..., description="Current page number (1-based)")
     per_page: int = Field(..., description="Number of items per page")
@@ -99,6 +100,7 @@ class PaginationMetadata(BaseModel):
 
 class PaginatedRiskResponse(BaseModel):
     """Paginated response for risk lists."""
+
     items: list[Risk] = Field(..., description="List of risks")
     pagination: PaginationMetadata = Field(..., description="Pagination metadata")
 

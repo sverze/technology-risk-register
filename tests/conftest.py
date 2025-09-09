@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.database import get_db
 from app.main import app
-from app.models.risk import Base, Risk, DropdownValue
+from app.models.risk import Base, DropdownValue, Risk
 
 # Test database URL - use in-memory SQLite for tests
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -53,7 +53,7 @@ def db_session():
 def sample_risks(db_session):
     """Create sample risks for testing."""
     from datetime import date
-    
+
     risk1 = Risk(
         risk_id="TR-2024-CYB-001",
         risk_title="Cybersecurity Risk",
@@ -75,10 +75,10 @@ def sample_risks(db_session):
         business_criticality="Medium",
         date_identified=date.today(),
         last_reviewed=date.today(),
-        next_review_date=date.today()
+        next_review_date=date.today(),
     )
     risk1.calculate_risk_ratings()
-    
+
     risk2 = Risk(
         risk_id="TR-2024-INF-001",
         risk_title="Infrastructure Risk",
@@ -100,10 +100,10 @@ def sample_risks(db_session):
         business_criticality="High",
         date_identified=date.today(),
         last_reviewed=date.today(),
-        next_review_date=date.today()
+        next_review_date=date.today(),
     )
     risk2.calculate_risk_ratings()
-    
+
     db_session.add(risk1)
     db_session.add(risk2)
     db_session.commit()
@@ -115,9 +115,9 @@ def dashboard_sample_risks(db_session):
     """Create comprehensive sample risks for dashboard testing."""
     from datetime import date, timedelta
     from decimal import Decimal
-    
+
     risks = []
-    
+
     # Critical risk
     risk1 = Risk(
         risk_id="TR-2024-CYB-001",
@@ -144,11 +144,11 @@ def dashboard_sample_risks(db_session):
         financial_impact_high=Decimal("2000000.00"),
         date_identified=date.today() - timedelta(days=30),
         last_reviewed=date.today() - timedelta(days=10),
-        next_review_date=date.today() + timedelta(days=20)
+        next_review_date=date.today() + timedelta(days=20),
     )
     risk1.calculate_risk_ratings()
     risks.append(risk1)
-    
+
     # High risk
     risk2 = Risk(
         risk_id="TR-2024-INF-001",
@@ -174,11 +174,11 @@ def dashboard_sample_risks(db_session):
         financial_impact_high=Decimal("800000.00"),
         date_identified=date.today() - timedelta(days=60),
         last_reviewed=date.today() - timedelta(days=15),
-        next_review_date=date.today() + timedelta(days=15)
+        next_review_date=date.today() + timedelta(days=15),
     )
     risk2.calculate_risk_ratings()
     risks.append(risk2)
-    
+
     # Medium risk
     risk3 = Risk(
         risk_id="TR-2024-APP-001",
@@ -203,12 +203,12 @@ def dashboard_sample_risks(db_session):
         financial_impact_high=Decimal("50000.00"),
         date_identified=date.today() - timedelta(days=45),
         last_reviewed=date.today(),
-        next_review_date=date.today() + timedelta(days=30)
+        next_review_date=date.today() + timedelta(days=30),
     )
     risk3.calculate_risk_ratings()
     risks.append(risk3)
-    
-    # Low risk  
+
+    # Low risk
     risk4 = Risk(
         risk_id="TR-2024-OPS-001",
         risk_title="Operational Process Gap",
@@ -232,11 +232,11 @@ def dashboard_sample_risks(db_session):
         financial_impact_high=Decimal("5000.00"),
         date_identified=date.today() - timedelta(days=90),
         last_reviewed=date.today() - timedelta(days=60),
-        next_review_date=date.today() - timedelta(days=5)  # Overdue
+        next_review_date=date.today() - timedelta(days=5),  # Overdue
     )
     risk4.calculate_risk_ratings()
     risks.append(risk4)
-    
+
     # Closed risk (should not appear in dashboard)
     risk5 = Risk(
         risk_id="TR-2024-CLD-001",
@@ -261,18 +261,18 @@ def dashboard_sample_risks(db_session):
         financial_impact_high=Decimal("25000.00"),
         date_identified=date.today() - timedelta(days=120),
         last_reviewed=date.today() - timedelta(days=30),
-        next_review_date=date.today() + timedelta(days=90)
+        next_review_date=date.today() + timedelta(days=90),
     )
     risk5.calculate_risk_ratings()
     risks.append(risk5)
-    
+
     # Add all risks to session
     for risk in risks:
         db_session.add(risk)
-    
+
     # Add some risk updates for activity tracking
     from app.models.risk import RiskUpdate
-    
+
     update1 = RiskUpdate(
         update_id="UPD-TR-2024-CYB-001-01",
         risk_id="TR-2024-CYB-001",
@@ -281,22 +281,22 @@ def dashboard_sample_risks(db_session):
         update_type="Risk Assessment Change",
         update_summary="Risk rating increased due to new threat intelligence",
         previous_risk_rating="12 (High)",
-        new_risk_rating="16 (Critical)"
+        new_risk_rating="16 (Critical)",
     )
     db_session.add(update1)
-    
+
     update2 = RiskUpdate(
-        update_id="UPD-TR-2024-INF-001-01", 
+        update_id="UPD-TR-2024-INF-001-01",
         risk_id="TR-2024-INF-001",
         update_date=date.today() - timedelta(days=20),
         updated_by="Infrastructure Team",
         update_type="Risk Assessment Change",
         update_summary="Risk rating updated after control implementation",
         previous_risk_rating="15 (Critical)",
-        new_risk_rating="12 (High)"
+        new_risk_rating="12 (High)",
     )
     db_session.add(update2)
-    
+
     db_session.commit()
     return risks
 
@@ -335,10 +335,7 @@ def sample_dropdown_values(db_session):
     dropdown_values = []
     for category, value, order in dropdown_data:
         dropdown_value = DropdownValue(
-            category=category,
-            value=value,
-            display_order=order,
-            is_active=True
+            category=category, value=value, display_order=order, is_active=True
         )
         dropdown_values.append(dropdown_value)
         db_session.add(dropdown_value)

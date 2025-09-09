@@ -179,7 +179,7 @@ def test_new_endpoint(self):
     """Test a new API endpoint."""
     response = requests.get(f"{API_V1_BASE}/new-endpoint")
     assert response.status_code == 200
-    
+
     data = response.json()
     assert "expected_field" in data
 ```

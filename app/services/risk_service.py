@@ -32,7 +32,8 @@ class RiskService:
         if search:
             search_term = f"%{search}%"
             query = query.filter(
-                Risk.risk_title.ilike(search_term) | Risk.risk_description.ilike(search_term)
+                Risk.risk_title.ilike(search_term)
+                | Risk.risk_description.ilike(search_term)
             )
 
         # Apply sorting
@@ -66,7 +67,8 @@ class RiskService:
         if search:
             search_term = f"%{search}%"
             query = query.filter(
-                Risk.risk_title.ilike(search_term) | Risk.risk_description.ilike(search_term)
+                Risk.risk_title.ilike(search_term)
+                | Risk.risk_description.ilike(search_term)
             )
 
         return query.count()

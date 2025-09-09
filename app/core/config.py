@@ -11,8 +11,8 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", 
-        f"sqlite:///{Path(__file__).parent.parent.parent / 'risk_register.db'}"
+        "DATABASE_URL",
+        f"sqlite:///{Path(__file__).parent.parent.parent / 'risk_register.db'}",
     )
 
     # CORS

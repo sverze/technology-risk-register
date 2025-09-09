@@ -25,7 +25,7 @@ This document tracks remaining tasks and future enhancements for the Technology 
 - [x] **Increase test coverage to >90%**
   - [x] Add comprehensive unit tests for risk_service.py methods
   - [x] Add comprehensive unit tests for dashboard_service.py calculations
-  - [x] Add integration tests for API endpoints  
+  - [x] Add integration tests for API endpoints
   - [x] Add tests for edge cases and error handling
   - [x] Achieved >95% code coverage on services layer
 
@@ -122,12 +122,12 @@ This document tracks remaining tasks and future enhancements for the Technology 
 2. **Next: Start React frontend development**
 3. Implement core dashboard components with real API integration
 
-### Medium Priority 
+### Medium Priority
 1. Complete dashboard implementation with charts and visualizations
 2. Add comprehensive error handling and loading states
 3. Implement responsive design for mobile/tablet
 
-### Lower Priority 
+### Lower Priority
 1. Production deployment setup
 2. Authentication system
 3. Advanced analytics features

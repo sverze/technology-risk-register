@@ -2,7 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.risk import Risk, RiskCreate, RiskUpdate, RiskUpdateResponse, PaginatedRiskResponse, PaginationMetadata
+from app.schemas.risk import (
+    PaginatedRiskResponse,
+    PaginationMetadata,
+    Risk,
+    RiskCreate,
+    RiskUpdate,
+    RiskUpdateResponse,
+)
 from app.services.risk_service import RiskService
 
 router = APIRouter()
@@ -20,7 +27,7 @@ def get_risks(
     db: Session = Depends(get_db),
 ) -> PaginatedRiskResponse:
     """Get risks with optional filtering, searching, and sorting.
-    
+
     Args:
         skip: Number of records to skip (for pagination)
         limit: Maximum number of records to return
@@ -29,7 +36,7 @@ def get_risks(
         search: Search in risk title and description (case-insensitive)
         sort_by: Field to sort by (e.g., 'risk_title', 'current_risk_rating')
         sort_order: Sort order ('asc' or 'desc')
-    
+
     Returns:
         Paginated response with risks and pagination metadata
     """
@@ -37,9 +44,9 @@ def get_risks(
         raise HTTPException(status_code=400, detail="Limit cannot exceed 500")
     if limit <= 0:
         raise HTTPException(status_code=400, detail="Limit must be greater than 0")
-    
+
     service = RiskService(db)
-    
+
     # Get risks and total count
     risks = service.get_risks(
         skip=skip,
@@ -50,19 +57,19 @@ def get_risks(
         sort_by=sort_by,
         sort_order=sort_order,
     )
-    
+
     total = service.get_risks_count(
         category=category,
         status=status,
         search=search,
     )
-    
+
     # Calculate pagination metadata
     page = (skip // limit) + 1
     pages = (total + limit - 1) // limit  # Ceiling division
     has_prev = page > 1
     has_next = page < pages
-    
+
     pagination = PaginationMetadata(
         total=total,
         page=page,
@@ -71,7 +78,7 @@ def get_risks(
         has_prev=has_prev,
         has_next=has_next,
     )
-    
+
     return PaginatedRiskResponse(
         items=risks,
         pagination=pagination,
@@ -113,14 +120,16 @@ def delete_risk(risk_id: str, db: Session = Depends(get_db)) -> dict[str, str]:
 
 
 @router.get("/{risk_id}/updates", response_model=list[RiskUpdateResponse])
-def get_risk_updates(risk_id: str, db: Session = Depends(get_db)) -> list[RiskUpdateResponse]:
+def get_risk_updates(
+    risk_id: str, db: Session = Depends(get_db)
+) -> list[RiskUpdateResponse]:
     """Get all update logs for a specific risk."""
     service = RiskService(db)
     # First check if risk exists
     risk = service.get_risk(risk_id)
     if not risk:
         raise HTTPException(status_code=404, detail="Risk not found")
-    
+
     return service.get_risk_updates(risk_id)
 
 
@@ -131,6 +140,6 @@ def get_recent_risk_updates(
     """Get recent risk updates across all risks."""
     if limit > 100:
         raise HTTPException(status_code=400, detail="Limit cannot exceed 100")
-    
+
     service = RiskService(db)
     return service.get_recent_risk_updates(limit=limit)
