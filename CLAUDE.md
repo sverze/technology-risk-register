@@ -11,7 +11,7 @@ This is a web application for managing technology risks with a dashboard view an
 ### Backend Development
 ```bash
 # Run the development server
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8008
 
 # Run tests with coverage
 uv run pytest --cov=app --cov-report=html --cov-report=term
@@ -35,14 +35,26 @@ uv run mypy app/
 
 ### Docker Development
 ```bash
-# Start local development environment
+# Start local development environment (both frontend and backend)
 docker-compose up -d
 
 # View logs
 docker-compose logs -f backend
+docker-compose logs -f frontend
+
+# View all logs
+docker-compose logs -f
+
+# Rebuild containers after code changes
+docker-compose up -d --build
 
 # Stop and clean up
 docker-compose down -v
+
+# Access services:
+# - Frontend: http://localhost:3000
+# - Backend API: http://localhost:8008/api/v1
+# - API Docs: http://localhost:8008/docs
 ```
 
 ## Architecture Overview
@@ -85,3 +97,4 @@ docker-compose down -v
 - GCP: Cloud Run + SQLite file in Cloud Storage
 - Database migrations run automatically on startup
 - Environment variables for configuration
+- Whwn confronted with UI related issues consider using playwright to test and diagnose the issue

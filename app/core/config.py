@@ -16,7 +16,14 @@ class Settings(BaseSettings):
     )
 
     # CORS
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8008",
+        "http://127.0.0.1:8008",
+        "http://frontend:3000",  # Docker network communication
+        "*",  # Allow all origins for development (remove in production)
+    ]
 
     # GCP
     GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "")
