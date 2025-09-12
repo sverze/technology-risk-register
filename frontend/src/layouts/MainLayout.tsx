@@ -14,7 +14,6 @@ import {
   ListItemText,
   useTheme,
   useMediaQuery,
-  Divider,
   Paper,
 } from '@mui/material';
 import {
@@ -75,7 +74,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       
       {/* Navigation List */}
       <List sx={{ p: 2 }}>
-        {navigationItems.map((item, index) => {
+        {navigationItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>

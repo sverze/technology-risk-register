@@ -28,12 +28,12 @@ dependencies = [
 packages = ["app"]
 
 [tool.black]
-line-length = 88
+line-length = 120
 target-version = ['py312']
 include = '\.pyi?$'
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -47,6 +47,7 @@ select = [
 ]
 ignore = [
     "B008",  # Do not perform function call in argument defaults (FastAPI Depends)
+    "E501",  # Line too long (handled by Black)
 ]
 
 [tool.ruff.format]
