@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -15,14 +15,14 @@ import {
   useTheme,
   useMediaQuery,
   Divider,
+  Paper,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  MenuOpen as MenuOpenIcon,
   Dashboard as DashboardIcon,
   List as ListIcon,
   Add as AddIcon,
-  ChevronLeft as ChevronLeftIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -36,175 +36,196 @@ const navigationItems = [
   { text: 'Add Risk', icon: <AddIcon />, path: '/risks/new' },
 ];
 
-const DRAWER_WIDTH = 250;
+const DRAWER_WIDTH = 280;
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
-  // Different drawer states for mobile vs desktop
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [desktopDrawerOpen, setDesktopDrawerOpen] = useState(true);
-
-  // Close mobile drawer when switching to desktop
-  useEffect(() => {
-    if (!isMobile) {
-      setMobileDrawerOpen(false);
-    }
-  }, [isMobile]);
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleDrawerToggle = () => {
-    if (isMobile) {
-      setMobileDrawerOpen(!mobileDrawerOpen);
-    } else {
-      setDesktopDrawerOpen(!desktopDrawerOpen);
-    }
+    setDrawerOpen(!drawerOpen);
   };
 
   const handleNavigate = (path: string) => {
     navigate(path);
-    // Close mobile drawer after navigation
-    if (isMobile) {
-      setMobileDrawerOpen(false);
-    }
+    setDrawerOpen(false); // Always close drawer after navigation
   };
 
   const drawer = (
-    <Box sx={{ width: DRAWER_WIDTH }}>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-          Risk Register
-        </Typography>
-        {!isMobile && (
-          <IconButton onClick={handleDrawerToggle} size="small">
-            <ChevronLeftIcon />
+    <Box sx={{ width: DRAWER_WIDTH, height: '100%' }}>
+      {/* Drawer Header */}
+      <Box sx={{ 
+        height: 80,
+        background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        px: 2,
+        position: 'relative'
+      }}>
+        {isMobile && (
+          <IconButton onClick={handleDrawerToggle} sx={{ color: 'white' }}>
+            <CloseIcon />
           </IconButton>
         )}
-      </Toolbar>
-      <Divider />
-      <List>
-        {navigationItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              onClick={() => handleNavigate(item.path)}
-              selected={location.pathname === item.path}
-              sx={{
-                minHeight: 48,
-                px: 2.5,
-              }}
-            >
-              <ListItemIcon
+      </Box>
+      
+      {/* Navigation List */}
+      <List sx={{ p: 2 }}>
+        {navigationItems.map((item, index) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+              <ListItemButton
+                onClick={() => handleNavigate(item.path)}
                 sx={{
-                  minWidth: 0,
-                  mr: 3,
-                  justifyContent: 'center',
+                  borderRadius: 2,
+                  py: 1.5,
+                  px: 2,
+                  minHeight: 56,
+                  backgroundColor: isActive ? 'primary.main' : 'transparent',
+                  color: isActive ? 'white' : 'text.primary',
+                  '&:hover': {
+                    backgroundColor: isActive ? 'primary.dark' : 'action.hover',
+                  },
+                  transition: 'all 0.2s ease-in-out',
                 }}
               >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+                <ListItemIcon
+                  sx={{
+                    minWidth: 40,
+                    color: isActive ? 'white' : 'primary.main',
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text} 
+                  primaryTypographyProps={{
+                    fontWeight: isActive ? 600 : 400,
+                    fontSize: '0.95rem'
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
       </List>
+      
+      {/* Footer */}
+      <Box sx={{ 
+        position: 'absolute', 
+        bottom: 0, 
+        left: 0, 
+        right: 0, 
+        p: 2,
+        borderTop: '1px solid',
+        borderColor: 'divider',
+        backgroundColor: 'background.paper'
+      }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          © 2025 Technology Risk Register
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          v1.0.0
+        </Typography>
+      </Box>
     </Box>
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: 'grey.50' }}>
+      {/* App Bar */}
       <AppBar
         position="fixed"
+        elevation={1}
         sx={{
           zIndex: theme.zIndex.drawer + 1,
-          ml: { md: desktopDrawerOpen ? `${DRAWER_WIDTH}px` : 0 },
-          width: {
-            md: desktopDrawerOpen ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%'
-          },
-          transition: theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
+          backgroundColor: 'white',
+          color: 'text.primary',
+          borderBottom: '1px solid',
+          borderBottomColor: 'divider',
         }}
       >
         <Toolbar>
           <IconButton
-            color="inherit"
+            color="primary"
             aria-label="toggle drawer"
             onClick={handleDrawerToggle}
             edge="start"
-            sx={{ mr: 2 }}
+            sx={{ 
+              mr: 2,
+              '&:hover': {
+                backgroundColor: 'primary.light',
+                color: 'white'
+              }
+            }}
           >
-            {(isMobile ? mobileDrawerOpen : desktopDrawerOpen) ? <MenuOpenIcon /> : <MenuIcon />}
+            <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
+          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600 }}>
             Technology Risk Register
           </Typography>
         </Toolbar>
       </AppBar>
 
-      {/* Desktop drawer */}
+      {/* Unified Drawer (works for both mobile and desktop) */}
       <Drawer
-        variant="persistent"
-        open={desktopDrawerOpen}
-        sx={{
-          display: { xs: 'none', md: 'block' },
-          '& .MuiDrawer-paper': {
-            width: DRAWER_WIDTH,
-            boxSizing: 'border-box',
-            position: 'relative',
-            height: '100vh',
-            transition: theme.transitions.create('width', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-          },
-        }}
-      >
-        {drawer}
-      </Drawer>
-
-      {/* Mobile drawer */}
-      <Drawer
-        variant="temporary"
-        open={mobileDrawerOpen}
+        variant={isMobile ? 'temporary' : 'temporary'} // Always temporary for cleaner behavior
+        anchor="left"
+        open={drawerOpen}
         onClose={handleDrawerToggle}
         ModalProps={{
-          keepMounted: true,
+          keepMounted: true, // Better mobile performance
         }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
+        PaperProps={{
+          elevation: 8,
+          sx: {
             width: DRAWER_WIDTH,
-            boxSizing: 'border-box',
-          },
+            background: 'linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%)',
+            border: 'none',
+            position: 'relative',
+          }
         }}
       >
         {drawer}
       </Drawer>
 
+      {/* Main Content Area */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          mt: 8,
-          ml: {
-            md: desktopDrawerOpen ? 0 : `-${DRAWER_WIDTH}px`
-          },
-          width: {
-            xs: '100%',
-            md: desktopDrawerOpen ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%'
-          },
-          transition: theme.transitions.create(['margin', 'width'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
         }}
       >
-        <Container maxWidth="xl">
-          {children}
+        <Toolbar /> {/* Spacer for AppBar */}
+        <Container 
+          maxWidth="xl" 
+          sx={{ 
+            flexGrow: 1, 
+            py: 3,
+            px: { xs: 2, sm: 3 } // Responsive padding
+          }}
+        >
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              p: { xs: 2, sm: 3 }, 
+              borderRadius: 2,
+              backgroundColor: 'white',
+              minHeight: 'calc(100vh - 120px)',
+              border: '1px solid',
+              borderColor: 'grey.200'
+            }}
+          >
+            {children}
+          </Paper>
         </Container>
       </Box>
     </Box>
