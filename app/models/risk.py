@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     Boolean,
@@ -70,12 +70,19 @@ class Risk(Base):
     next_review_date = Column(Date, nullable=False)
 
     # Audit Fields
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     # Relationships
-    updates = relationship(
-        "RiskUpdate", back_populates="risk", cascade="all, delete-orphan"
+    log_entries = relationship(
+        "RiskLogEntry",
+        back_populates="risk",
+        cascade="all, delete-orphan",
+        order_by="desc(RiskLogEntry.created_at)",
     )
 
     def calculate_risk_ratings(self) -> None:
@@ -84,23 +91,73 @@ class Risk(Base):
         self.current_risk_rating = self.current_probability * self.current_impact
 
 
-class RiskUpdate(Base):
-    __tablename__ = "risk_updates"
+class RiskLogEntry(Base):
+    __tablename__ = "risk_log_entries"
 
-    update_id = Column(String(15), primary_key=True, index=True)
+    # Primary identification
+    log_entry_id = Column(String(15), primary_key=True, index=True)
     risk_id = Column(
         String(12), ForeignKey("risks.risk_id"), nullable=False, index=True
     )
-    update_date = Column(Date, nullable=False)
-    updated_by = Column(String(50), nullable=False)
-    update_type = Column(String(50), nullable=False)
-    update_summary = Column(String(300), nullable=False)
-    previous_risk_rating = Column(String(20))
-    new_risk_rating = Column(String(20))
-    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Entry metadata
+    entry_date = Column(Date, nullable=False)
+    entry_type = Column(
+        String(50), nullable=False
+    )  # e.g., "Risk Assessment Update", "Mitigation Completed", "Review"
+    entry_summary = Column(String(500), nullable=False)
+
+    # Risk rating changes
+    previous_risk_rating = Column(Integer)  # Previous overall risk rating
+    new_risk_rating = Column(Integer)  # New overall risk rating
+    previous_probability = Column(Integer)  # Previous probability (1-5)
+    new_probability = Column(Integer)  # New probability (1-5)
+    previous_impact = Column(Integer)  # Previous impact (1-5)
+    new_impact = Column(Integer)  # New impact (1-5)
+
+    # Actions and context
+    mitigation_actions_taken = Column(
+        String(300)
+    )  # Actions taken as part of this update
+    risk_owner_at_time = Column(String(50))  # Risk owner when this entry was made
+    supporting_evidence = Column(String(200))  # Links to documents, tickets, etc.
+
+    # Workflow and approval
+    entry_status = Column(
+        String(20), default="Draft"
+    )  # Draft, Submitted, Approved, Rejected
+    created_by = Column(String(50), nullable=False)  # Person who created the entry
+    reviewed_by = Column(String(50))  # Person who reviewed/approved
+    approved_date = Column(Date)  # Date of approval
+
+    # Additional context
+    business_justification = Column(String(300))  # Why this change was made
+    next_review_required = Column(Date)  # When this should be reviewed again
+
+    # Audit fields
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     # Relationships
-    risk = relationship("Risk", back_populates="updates")
+    risk = relationship("Risk", back_populates="log_entries")
+
+    def update_parent_risk_rating(self) -> None:
+        """Update the parent Risk's current rating when this log entry is approved."""
+        if self.entry_status == "Approved" and self.new_risk_rating is not None:
+            # Update the risk's current rating fields
+            if self.new_probability is not None:
+                self.risk.current_probability = self.new_probability
+            if self.new_impact is not None:
+                self.risk.current_impact = self.new_impact
+            if self.new_risk_rating is not None:
+                self.risk.current_risk_rating = self.new_risk_rating
+
+            # Update the last reviewed date to the entry date
+            self.risk.last_reviewed = self.entry_date
 
 
 class DropdownValue(Base):

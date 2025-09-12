@@ -271,9 +271,9 @@ def dashboard_sample_risks(db_session):
         db_session.add(risk)
 
     # Add some risk updates for activity tracking
-    from app.models.risk import RiskUpdate
+    from app.models.risk import RiskLogEntry
 
-    update1 = RiskUpdate(
+    update1 = RiskLogEntry(
         update_id="UPD-TR-2024-CYB-001-01",
         risk_id="TR-2024-CYB-001",
         update_date=date.today() - timedelta(days=15),
@@ -285,7 +285,7 @@ def dashboard_sample_risks(db_session):
     )
     db_session.add(update1)
 
-    update2 = RiskUpdate(
+    update2 = RiskLogEntry(
         update_id="UPD-TR-2024-INF-001-01",
         risk_id="TR-2024-INF-001",
         update_date=date.today() - timedelta(days=20),

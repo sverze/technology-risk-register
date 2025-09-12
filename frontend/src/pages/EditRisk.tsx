@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Typography,
   Box,
@@ -12,14 +13,16 @@ import {
   Switch,
   FormControlLabel,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useCreateRisk } from '@/hooks/useRisks';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { useRisk, useUpdateRisk } from '@/hooks/useRisks';
 import { useDropdownValues } from '@/hooks/useDropdownValues';
 import { validateRiskForm, type RiskFormData } from '@/utils/validation';
 
-export const AddRisk: React.FC = () => {
+export const EditRisk: React.FC = () => {
+  const { riskId } = useParams<{ riskId: string }>();
   const navigate = useNavigate();
-  const { mutate: createRisk, isPending, error } = useCreateRisk();
+  const { data: risk, isLoading: isLoadingRisk, error: loadError } = useRisk(riskId || '');
+  const { mutate: updateRisk, isPending, error } = useUpdateRisk();
   const { data: dropdownData } = useDropdownValues();
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -54,10 +57,51 @@ export const AddRisk: React.FC = () => {
     rpo_hours: '',
     sla_impact: '',
     slo_impact: '',
-    date_identified: new Date().toISOString().split('T')[0],
-    last_reviewed: new Date().toISOString().split('T')[0],
+    date_identified: '',
+    last_reviewed: '',
     next_review_date: '',
   });
+
+  // Pre-populate form when risk data loads
+  useEffect(() => {
+    if (risk) {
+      setFormData({
+        risk_title: risk.risk_title,
+        risk_description: risk.risk_description,
+        risk_category: risk.risk_category,
+        inherent_probability: risk.inherent_probability,
+        inherent_impact: risk.inherent_impact,
+        current_probability: risk.current_probability,
+        current_impact: risk.current_impact,
+        risk_status: risk.risk_status,
+        risk_response_strategy: risk.risk_response_strategy || '',
+        planned_mitigations: risk.planned_mitigations || '',
+        preventative_controls_status: risk.preventative_controls_status,
+        preventative_controls_description: risk.preventative_controls_description || '',
+        detective_controls_status: risk.detective_controls_status,
+        detective_controls_description: risk.detective_controls_description || '',
+        corrective_controls_status: risk.corrective_controls_status,
+        corrective_controls_description: risk.corrective_controls_description || '',
+        control_gaps: risk.control_gaps || '',
+        risk_owner: risk.risk_owner,
+        risk_owner_department: risk.risk_owner_department,
+        systems_affected: risk.systems_affected || '',
+        technology_domain: risk.technology_domain,
+        ibs_impact: risk.ibs_impact,
+        number_of_ibs_affected: risk.number_of_ibs_affected ? risk.number_of_ibs_affected.toString() : '',
+        business_criticality: risk.business_criticality,
+        financial_impact_low: risk.financial_impact_low ? risk.financial_impact_low.toString() : '',
+        financial_impact_high: risk.financial_impact_high ? risk.financial_impact_high.toString() : '',
+        rto_hours: risk.rto_hours ? risk.rto_hours.toString() : '',
+        rpo_hours: risk.rpo_hours ? risk.rpo_hours.toString() : '',
+        sla_impact: risk.sla_impact || '',
+        slo_impact: risk.slo_impact || '',
+        date_identified: risk.date_identified.toString().split('T')[0],
+        last_reviewed: risk.last_reviewed.toString().split('T')[0],
+        next_review_date: risk.next_review_date ? risk.next_review_date.toString().split('T')[0] : '',
+      });
+    }
+  }, [risk]);
 
   const handleChange = (field: string, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -69,6 +113,8 @@ export const AddRisk: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!riskId) return;
 
     // Validate form
     const validation = validateRiskForm(formData);
@@ -96,20 +142,57 @@ export const AddRisk: React.FC = () => {
         : undefined,
     };
 
-    createRisk(submitData, {
+    updateRisk({ riskId, data: submitData }, {
       onSuccess: () => {
-        navigate('/risks');
+        navigate(`/risks/${riskId}`);
       },
     });
   };
+
+  if (isLoadingRisk) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Box>
+        <Alert severity="error">
+          Failed to load risk details. Please try again.
+        </Alert>
+      </Box>
+    );
+  }
+
+  if (!risk) {
+    return (
+      <Box>
+        <Alert severity="warning">
+          Risk not found.
+        </Alert>
+      </Box>
+    );
+  }
 
   const dropdowns = dropdownData;
 
   return (
     <Box>
-      <Typography variant="h1" gutterBottom>
-        Add New Risk
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(`/risks/${riskId}`)}
+          sx={{ mr: 2 }}
+        >
+          Back to Risk Details
+        </Button>
+        <Typography variant="h1">
+          Edit Risk: {risk.risk_title}
+        </Typography>
+      </Box>
 
       <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSubmit}>
@@ -121,8 +204,6 @@ export const AddRisk: React.FC = () => {
                 label="Risk Title"
                 value={formData.risk_title}
                 onChange={(e) => handleChange('risk_title', e.target.value)}
-                error={!!validationErrors.risk_title}
-                helperText={validationErrors.risk_title}
               />
             </Grid>
 
@@ -135,8 +216,6 @@ export const AddRisk: React.FC = () => {
                 label="Risk Description"
                 value={formData.risk_description}
                 onChange={(e) => handleChange('risk_description', e.target.value)}
-                error={!!validationErrors.risk_description}
-                helperText={validationErrors.risk_description}
               />
             </Grid>
 
@@ -249,8 +328,6 @@ export const AddRisk: React.FC = () => {
                 label="Risk Owner"
                 value={formData.risk_owner}
                 onChange={(e) => handleChange('risk_owner', e.target.value)}
-                error={!!validationErrors.risk_owner}
-                helperText={validationErrors.risk_owner}
               />
             </Grid>
 
@@ -568,15 +645,7 @@ export const AddRisk: React.FC = () => {
             {error && (
               <Grid item xs={12}>
                 <Alert severity="error">
-                  Failed to create risk. Please check your input and try again.
-                </Alert>
-              </Grid>
-            )}
-
-            {Object.keys(validationErrors).length > 0 && (
-              <Grid item xs={12}>
-                <Alert severity="warning">
-                  Please correct the highlighted fields above before submitting.
+                  Failed to update risk. Please check your input and try again.
                 </Alert>
               </Grid>
             )}
@@ -589,11 +658,11 @@ export const AddRisk: React.FC = () => {
                   disabled={isPending}
                   startIcon={isPending ? <CircularProgress size={20} /> : null}
                 >
-                  {isPending ? 'Creating...' : 'Create Risk'}
+                  {isPending ? 'Updating...' : 'Update Risk'}
                 </Button>
                 <Button
                   variant="outlined"
-                  onClick={() => navigate('/risks')}
+                  onClick={() => navigate(`/risks/${riskId}`)}
                 >
                   Cancel
                 </Button>

@@ -2,8 +2,10 @@ from datetime import date, datetime
 
 from sqlalchemy.orm import Session
 
-from app.models.risk import Risk, RiskUpdate
-from app.schemas.risk import RiskCreate
+from app.models.risk import Risk, RiskLogEntry
+
+# Legacy import for backward compatibility
+from app.schemas.risk import RiskCreate, RiskLogEntryCreate, RiskLogEntryUpdate
 from app.schemas.risk import RiskUpdate as RiskUpdateSchema
 
 
@@ -90,16 +92,16 @@ class RiskService:
         self.db.commit()
         self.db.refresh(db_risk)
 
-        # Create initial update log entry
-        self._create_update_log(
+        # Create initial log entry
+        self._create_log_entry(
             risk_id=risk_id,
-            update_type="Risk Creation",
-            update_summary="Risk initially created in the system",
-            updated_by=risk_data.risk_owner,
-            new_risk_rating=(
-                f"{db_risk.current_risk_rating} "
-                f"({self._get_risk_level(db_risk.current_risk_rating)})"
-            ),
+            entry_type="Risk Creation",
+            entry_summary="Risk initially created in the system",
+            created_by=risk_data.risk_owner,
+            new_risk_rating=db_risk.current_risk_rating,
+            new_probability=db_risk.current_probability,
+            new_impact=db_risk.current_impact,
+            risk_owner_at_time=risk_data.risk_owner,
         )
         self.db.commit()
 
@@ -123,18 +125,24 @@ class RiskService:
         db_risk.calculate_risk_ratings()
         db_risk.updated_at = datetime.utcnow()
 
-        # Create update log if rating changed
+        # Create log entry if rating changed
         if db_risk.current_risk_rating != previous_rating:
             new_level = self._get_risk_level(db_risk.current_risk_rating)
-            self._create_update_log(
+            self._create_log_entry(
                 risk_id=risk_id,
-                update_type="Risk Assessment Change",
-                update_summary=(
-                    f"Risk rating changed from {previous_level} to {new_level}"
+                entry_type="Risk Assessment Update",
+                entry_summary=(
+                    f"Risk rating changed from {previous_level} to {new_level} via direct risk update"
                 ),
-                updated_by=risk_data.risk_owner,
-                previous_risk_rating=f"{previous_rating} ({previous_level})",
-                new_risk_rating=f"{db_risk.current_risk_rating} ({new_level})",
+                created_by=risk_data.risk_owner,
+                previous_risk_rating=previous_rating,
+                new_risk_rating=db_risk.current_risk_rating,
+                previous_probability=db_risk.current_probability,  # Note: we don't track previous values in direct updates
+                new_probability=db_risk.current_probability,
+                previous_impact=db_risk.current_impact,
+                new_impact=db_risk.current_impact,
+                risk_owner_at_time=risk_data.risk_owner,
+                entry_status="Approved",  # Direct risk updates are auto-approved
             )
 
         self.db.commit()
@@ -196,50 +204,179 @@ class RiskService:
         else:
             return "Unknown"
 
-    def _create_update_log(
+    def _create_log_entry(
         self,
         risk_id: str,
-        update_type: str,
-        update_summary: str,
-        updated_by: str,
-        previous_risk_rating: str | None = None,
-        new_risk_rating: str | None = None,
+        entry_type: str,
+        entry_summary: str,
+        created_by: str,
+        previous_risk_rating: int | None = None,
+        new_risk_rating: int | None = None,
+        previous_probability: int | None = None,
+        new_probability: int | None = None,
+        previous_impact: int | None = None,
+        new_impact: int | None = None,
+        risk_owner_at_time: str | None = None,
+        entry_status: str = "Draft",
+        business_justification: str | None = None,
+        mitigation_actions_taken: str | None = None,
+        supporting_evidence: str | None = None,
     ) -> None:
-        """Create an update log entry."""
-        # Generate update ID
+        """Create a log entry (internal helper method)."""
+        # Generate log entry ID
         existing_count = (
-            self.db.query(RiskUpdate).filter(RiskUpdate.risk_id == risk_id).count()
+            self.db.query(RiskLogEntry).filter(RiskLogEntry.risk_id == risk_id).count()
         )
-        update_id = f"UPD-{risk_id}-{existing_count + 1:02d}"
+        log_entry_id = f"LOG-{risk_id}-{existing_count + 1:03d}"
 
-        update_log = RiskUpdate(
-            update_id=update_id,
+        log_entry = RiskLogEntry(
+            log_entry_id=log_entry_id,
             risk_id=risk_id,
-            update_date=date.today(),
-            updated_by=updated_by,
-            update_type=update_type,
-            update_summary=update_summary,
+            entry_date=date.today(),
+            entry_type=entry_type,
+            entry_summary=entry_summary,
             previous_risk_rating=previous_risk_rating,
             new_risk_rating=new_risk_rating,
+            previous_probability=previous_probability,
+            new_probability=new_probability,
+            previous_impact=previous_impact,
+            new_impact=new_impact,
+            mitigation_actions_taken=mitigation_actions_taken,
+            risk_owner_at_time=risk_owner_at_time,
+            supporting_evidence=supporting_evidence,
+            entry_status=entry_status,
+            created_by=created_by,
+            business_justification=business_justification,
         )
 
-        self.db.add(update_log)
+        self.db.add(log_entry)
         # Note: Don't commit here, let the caller handle it
 
-    def get_risk_updates(self, risk_id: str) -> list[RiskUpdate]:
-        """Get all update logs for a specific risk."""
-        return (
-            self.db.query(RiskUpdate)
-            .filter(RiskUpdate.risk_id == risk_id)
-            .order_by(RiskUpdate.update_date.desc(), RiskUpdate.created_at.desc())
-            .all()
-        )
+    # Legacy methods for backward compatibility
+    def get_risk_updates(self, risk_id: str) -> list[RiskLogEntry]:
+        """Get all update logs for a specific risk (legacy method)."""
+        return self.get_risk_log_entries(risk_id)
 
-    def get_recent_risk_updates(self, limit: int = 50) -> list[RiskUpdate]:
-        """Get recent risk updates across all risks."""
+    def get_recent_risk_updates(self, limit: int = 50) -> list[RiskLogEntry]:
+        """Get recent risk updates across all risks (legacy method)."""
         return (
-            self.db.query(RiskUpdate)
-            .order_by(RiskUpdate.update_date.desc(), RiskUpdate.created_at.desc())
+            self.db.query(RiskLogEntry)
+            .order_by(RiskLogEntry.entry_date.desc(), RiskLogEntry.created_at.desc())
             .limit(limit)
             .all()
         )
+
+    # New RiskLogEntry methods
+    def create_risk_log_entry(self, log_entry_data: RiskLogEntryCreate) -> RiskLogEntry:
+        """Create a new log entry for a risk."""
+        # Generate log entry ID
+        existing_count = (
+            self.db.query(RiskLogEntry)
+            .filter(RiskLogEntry.risk_id == log_entry_data.risk_id)
+            .count()
+        )
+        log_entry_id = f"LOG-{log_entry_data.risk_id}-{existing_count + 1:03d}"
+
+        # Get current risk data for context
+        current_risk = self.get_risk(log_entry_data.risk_id)
+        if current_risk:
+            # Auto-populate previous values if not provided
+            if log_entry_data.previous_risk_rating is None:
+                log_entry_data.previous_risk_rating = current_risk.current_risk_rating
+            if log_entry_data.previous_probability is None:
+                log_entry_data.previous_probability = current_risk.current_probability
+            if log_entry_data.previous_impact is None:
+                log_entry_data.previous_impact = current_risk.current_impact
+            if log_entry_data.risk_owner_at_time is None:
+                log_entry_data.risk_owner_at_time = current_risk.risk_owner
+
+        db_log_entry = RiskLogEntry(log_entry_id=log_entry_id, **log_entry_data.dict())
+
+        self.db.add(db_log_entry)
+        self.db.commit()
+        self.db.refresh(db_log_entry)
+
+        return db_log_entry
+
+    def get_risk_log_entries(self, risk_id: str) -> list[RiskLogEntry]:
+        """Get all log entries for a specific risk, ordered by most recent first."""
+        return (
+            self.db.query(RiskLogEntry)
+            .filter(RiskLogEntry.risk_id == risk_id)
+            .order_by(RiskLogEntry.entry_date.desc(), RiskLogEntry.created_at.desc())
+            .all()
+        )
+
+    def get_risk_log_entry(self, log_entry_id: str) -> RiskLogEntry | None:
+        """Get a specific log entry by ID."""
+        return (
+            self.db.query(RiskLogEntry)
+            .filter(RiskLogEntry.log_entry_id == log_entry_id)
+            .first()
+        )
+
+    def update_risk_log_entry(
+        self, log_entry_id: str, log_entry_data: RiskLogEntryUpdate
+    ) -> RiskLogEntry | None:
+        """Update an existing log entry."""
+        db_log_entry = self.get_risk_log_entry(log_entry_id)
+        if not db_log_entry:
+            return None
+
+        # Update only provided fields
+        for field, value in log_entry_data.dict(exclude_unset=True).items():
+            setattr(db_log_entry, field, value)
+
+        self.db.commit()
+        self.db.refresh(db_log_entry)
+
+        return db_log_entry
+
+    def approve_risk_log_entry(
+        self, log_entry_id: str, reviewed_by: str
+    ) -> RiskLogEntry | None:
+        """Approve a log entry and update the parent risk's current rating."""
+        db_log_entry = self.get_risk_log_entry(log_entry_id)
+        if not db_log_entry:
+            return None
+
+        # Update approval status
+        db_log_entry.entry_status = "Approved"
+        db_log_entry.reviewed_by = reviewed_by
+        db_log_entry.approved_date = date.today()
+
+        # Apply the rating changes to the parent risk
+        db_log_entry.update_parent_risk_rating()
+
+        self.db.commit()
+        self.db.refresh(db_log_entry)
+
+        return db_log_entry
+
+    def reject_risk_log_entry(
+        self, log_entry_id: str, reviewed_by: str
+    ) -> RiskLogEntry | None:
+        """Reject a log entry."""
+        db_log_entry = self.get_risk_log_entry(log_entry_id)
+        if not db_log_entry:
+            return None
+
+        # Update rejection status
+        db_log_entry.entry_status = "Rejected"
+        db_log_entry.reviewed_by = reviewed_by
+        db_log_entry.approved_date = date.today()  # Date of decision
+
+        self.db.commit()
+        self.db.refresh(db_log_entry)
+
+        return db_log_entry
+
+    def delete_risk_log_entry(self, log_entry_id: str) -> bool:
+        """Delete a log entry."""
+        db_log_entry = self.get_risk_log_entry(log_entry_id)
+        if not db_log_entry:
+            return False
+
+        self.db.delete(db_log_entry)
+        self.db.commit()
+        return True

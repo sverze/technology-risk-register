@@ -7,8 +7,11 @@ from app.schemas.risk import (
     PaginationMetadata,
     Risk,
     RiskCreate,
+    RiskLogEntryCreate,
+    RiskLogEntryResponse,
+    RiskLogEntryUpdate,
     RiskUpdate,
-    RiskUpdateResponse,
+    RiskUpdateResponse,  # Legacy compatibility
 )
 from app.services.risk_service import RiskService
 
@@ -143,3 +146,96 @@ def get_recent_risk_updates(
 
     service = RiskService(db)
     return service.get_recent_risk_updates(limit=limit)
+
+
+# New RiskLogEntry endpoints
+@router.post("/{risk_id}/log-entries", response_model=RiskLogEntryResponse)
+def create_risk_log_entry(
+    risk_id: str, log_entry_data: RiskLogEntryCreate, db: Session = Depends(get_db)
+) -> RiskLogEntryResponse:
+    """Create a new log entry for a risk."""
+    service = RiskService(db)
+
+    # Ensure risk exists
+    risk = service.get_risk(risk_id)
+    if not risk:
+        raise HTTPException(status_code=404, detail="Risk not found")
+
+    # Set the risk_id in the log entry data
+    log_entry_data.risk_id = risk_id
+
+    return service.create_risk_log_entry(log_entry_data)
+
+
+@router.get("/{risk_id}/log-entries", response_model=list[RiskLogEntryResponse])
+def get_risk_log_entries(
+    risk_id: str, db: Session = Depends(get_db)
+) -> list[RiskLogEntryResponse]:
+    """Get all log entries for a specific risk, ordered by most recent first."""
+    service = RiskService(db)
+
+    # First check if risk exists
+    risk = service.get_risk(risk_id)
+    if not risk:
+        raise HTTPException(status_code=404, detail="Risk not found")
+
+    return service.get_risk_log_entries(risk_id)
+
+
+@router.get("/log-entries/{log_entry_id}", response_model=RiskLogEntryResponse)
+def get_risk_log_entry(
+    log_entry_id: str, db: Session = Depends(get_db)
+) -> RiskLogEntryResponse:
+    """Get a specific log entry by ID."""
+    service = RiskService(db)
+    log_entry = service.get_risk_log_entry(log_entry_id)
+    if not log_entry:
+        raise HTTPException(status_code=404, detail="Log entry not found")
+    return log_entry
+
+
+@router.put("/log-entries/{log_entry_id}", response_model=RiskLogEntryResponse)
+def update_risk_log_entry(
+    log_entry_id: str, log_entry_data: RiskLogEntryUpdate, db: Session = Depends(get_db)
+) -> RiskLogEntryResponse:
+    """Update an existing log entry."""
+    service = RiskService(db)
+    log_entry = service.update_risk_log_entry(log_entry_id, log_entry_data)
+    if not log_entry:
+        raise HTTPException(status_code=404, detail="Log entry not found")
+    return log_entry
+
+
+@router.post("/log-entries/{log_entry_id}/approve", response_model=RiskLogEntryResponse)
+def approve_risk_log_entry(
+    log_entry_id: str, reviewed_by: str, db: Session = Depends(get_db)
+) -> RiskLogEntryResponse:
+    """Approve a log entry and update the parent risk's current rating."""
+    service = RiskService(db)
+    log_entry = service.approve_risk_log_entry(log_entry_id, reviewed_by)
+    if not log_entry:
+        raise HTTPException(status_code=404, detail="Log entry not found")
+    return log_entry
+
+
+@router.post("/log-entries/{log_entry_id}/reject", response_model=RiskLogEntryResponse)
+def reject_risk_log_entry(
+    log_entry_id: str, reviewed_by: str, db: Session = Depends(get_db)
+) -> RiskLogEntryResponse:
+    """Reject a log entry."""
+    service = RiskService(db)
+    log_entry = service.reject_risk_log_entry(log_entry_id, reviewed_by)
+    if not log_entry:
+        raise HTTPException(status_code=404, detail="Log entry not found")
+    return log_entry
+
+
+@router.delete("/log-entries/{log_entry_id}")
+def delete_risk_log_entry(
+    log_entry_id: str, db: Session = Depends(get_db)
+) -> dict[str, str]:
+    """Delete a log entry."""
+    service = RiskService(db)
+    if not service.delete_risk_log_entry(log_entry_id):
+        raise HTTPException(status_code=404, detail="Log entry not found")
+    return {"message": "Log entry deleted successfully"}

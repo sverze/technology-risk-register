@@ -17,6 +17,7 @@ import {
   MenuItem,
   Button,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { useRisks } from '@/hooks/useRisks';
 import { useDropdownValues } from '@/hooks/useDropdownValues';
 
@@ -35,6 +36,7 @@ const getSeverityLabel = (rating: number): string => {
 };
 
 export const RiskList: React.FC = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
@@ -192,7 +194,12 @@ export const RiskList: React.FC = () => {
           <TableBody>
             {risks.length > 0 ? (
               risks.map((risk) => (
-                <TableRow key={risk.risk_id} hover>
+                <TableRow
+                  key={risk.risk_id}
+                  hover
+                  onClick={() => navigate(`/risks/${risk.risk_id}`)}
+                  sx={{ cursor: 'pointer' }}
+                >
                   <TableCell>{risk.risk_id}</TableCell>
                   <TableCell>
                     <Typography variant="subtitle2">{risk.risk_title}</Typography>

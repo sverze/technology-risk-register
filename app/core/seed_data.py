@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from app.models.risk import DropdownValue, Risk, RiskUpdate
+from app.models.risk import DropdownValue, Risk, RiskLogEntry
 
 
 def seed_dropdown_values(db: Session) -> None:
@@ -517,9 +517,9 @@ def seed_sample_risks(db: Session) -> None:
         },
     ]
 
-    # Create RiskUpdate objects and add to database
+    # Create RiskLogEntry objects and add to database
     for update_data in sample_updates:
-        update = RiskUpdate(**update_data)
+        update = RiskLogEntry(**update_data)
         db.add(update)
 
     db.commit()

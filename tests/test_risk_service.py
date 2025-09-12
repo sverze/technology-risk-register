@@ -1,9 +1,9 @@
 from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
-from app.models.risk import Risk, RiskUpdate
+from app.models.risk import Risk, RiskLogEntry
 from app.schemas.risk import RiskCreate
-from app.schemas.risk import RiskUpdate as RiskUpdateSchema
+from app.schemas.risk import RiskLogEntry as RiskLogEntrySchema
 from app.services.risk_service import RiskService
 
 
@@ -330,8 +330,8 @@ class TestRiskService:
 
         # Check that update log was created
         update_log = (
-            db_session.query(RiskUpdate)
-            .filter(RiskUpdate.risk_id == risk.risk_id)
+            db_session.query(RiskLogEntry)
+            .filter(RiskLogEntry.risk_id == risk.risk_id)
             .first()
         )
         assert update_log is not None
@@ -342,7 +342,7 @@ class TestRiskService:
         service = RiskService(db_session)
 
         # Create a partial update with minimal required fields
-        update_data = RiskUpdateSchema(
+        update_data = RiskLogEntrySchema(
             risk_title="Updated Title",
             risk_description="Test cybersecurity risk",
             risk_category="Cybersecurity",
@@ -373,8 +373,8 @@ class TestRiskService:
         # Check if rating changed and update log was created
         if risk.current_risk_rating != 12:  # Previous rating from sample data
             update_log = (
-                db_session.query(RiskUpdate)
-                .filter(RiskUpdate.risk_id == "TR-2024-CYB-001")
+                db_session.query(RiskLogEntry)
+                .filter(RiskLogEntry.risk_id == "TR-2024-CYB-001")
                 .first()
             )
             if update_log:
@@ -383,7 +383,7 @@ class TestRiskService:
     def test_update_risk_not_exists(self, db_session):
         """Test update_risk with non-existing risk."""
         service = RiskService(db_session)
-        update_data = RiskUpdateSchema(
+        update_data = RiskLogEntrySchema(
             risk_title="Updated Title",
             risk_description="Test Description",
             risk_category="Cybersecurity",
@@ -522,8 +522,8 @@ class TestRiskService:
 
         # Verify update log was created
         update_log = (
-            db_session.query(RiskUpdate)
-            .filter(RiskUpdate.risk_id == "TR-2024-TEST-001")
+            db_session.query(RiskLogEntry)
+            .filter(RiskLogEntry.risk_id == "TR-2024-TEST-001")
             .first()
         )
 
@@ -539,9 +539,9 @@ class TestRiskService:
     def test_get_risk_updates_exists(self, db_session, sample_risks):
         """Test get_risk_updates with existing risk."""
         # Create some updates for the risk
-        from app.models.risk import RiskUpdate
+        from app.models.risk import RiskLogEntry
 
-        update1 = RiskUpdate(
+        update1 = RiskLogEntry(
             update_id="UPD-TR-2024-CYB-001-01",
             risk_id="TR-2024-CYB-001",
             update_date=date.today() - timedelta(days=2),
@@ -550,7 +550,7 @@ class TestRiskService:
             update_summary="First update",
         )
 
-        update2 = RiskUpdate(
+        update2 = RiskLogEntry(
             update_id="UPD-TR-2024-CYB-001-02",
             risk_id="TR-2024-CYB-001",
             update_date=date.today() - timedelta(days=1),
@@ -579,7 +579,7 @@ class TestRiskService:
 
     def test_get_recent_risk_updates(self, db_session):
         """Test get_recent_risk_updates."""
-        from app.models.risk import Risk, RiskUpdate
+        from app.models.risk import Risk, RiskLogEntry
 
         # Create a risk first
         risk = Risk(
@@ -631,7 +631,7 @@ class TestRiskService:
         ]
 
         for update_id, risk_id, update_date, summary in updates_data:
-            update = RiskUpdate(
+            update = RiskLogEntry(
                 update_id=update_id,
                 risk_id=risk_id,
                 update_date=update_date,
@@ -654,7 +654,7 @@ class TestRiskService:
 
     def test_get_recent_risk_updates_with_limit(self, db_session):
         """Test get_recent_risk_updates with limit."""
-        from app.models.risk import Risk, RiskUpdate
+        from app.models.risk import Risk, RiskLogEntry
 
         # Create a risk first
         risk = Risk(
@@ -685,7 +685,7 @@ class TestRiskService:
 
         # Create 5 updates
         for i in range(5):
-            update = RiskUpdate(
+            update = RiskLogEntry(
                 update_id=f"UPD-TR-2024-TEST-002-{i + 1:02d}",
                 risk_id="TR-2024-TEST-002",
                 update_date=date.today() - timedelta(days=i),

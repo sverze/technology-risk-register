@@ -1,4 +1,5 @@
 import type { Risk, DashboardData, DropdownValues, RiskUpdate, PaginatedResponse } from '@/types/risk';
+import type { RiskLogEntry, RiskLogEntryCreate, RiskLogEntryUpdate } from '@/types/riskLogEntry';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -91,6 +92,55 @@ export const riskApi = {
   getRecentUpdates: async (limit?: number): Promise<RiskUpdate[]> => {
     const query = limit ? `?limit=${limit}` : '';
     return apiRequest<RiskUpdate[]>(`/risks/updates/recent${query}`);
+  },
+};
+
+export const riskLogEntryApi = {
+  // Create a new log entry
+  createLogEntry: async (logEntry: RiskLogEntryCreate): Promise<RiskLogEntry> => {
+    return apiRequest<RiskLogEntry>(`/risks/${logEntry.risk_id}/log-entries`, {
+      method: 'POST',
+      body: JSON.stringify(logEntry),
+    });
+  },
+
+  // Get all log entries for a risk
+  getLogEntries: async (riskId: string): Promise<RiskLogEntry[]> => {
+    return apiRequest<RiskLogEntry[]>(`/risks/${riskId}/log-entries`);
+  },
+
+  // Get a specific log entry
+  getLogEntry: async (logEntryId: string): Promise<RiskLogEntry> => {
+    return apiRequest<RiskLogEntry>(`/risks/log-entries/${logEntryId}`);
+  },
+
+  // Update a log entry
+  updateLogEntry: async (logEntryId: string, updates: RiskLogEntryUpdate): Promise<RiskLogEntry> => {
+    return apiRequest<RiskLogEntry>(`/risks/log-entries/${logEntryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // Approve a log entry
+  approveLogEntry: async (logEntryId: string, reviewedBy: string): Promise<RiskLogEntry> => {
+    return apiRequest<RiskLogEntry>(`/risks/log-entries/${logEntryId}/approve?reviewed_by=${encodeURIComponent(reviewedBy)}`, {
+      method: 'POST',
+    });
+  },
+
+  // Reject a log entry
+  rejectLogEntry: async (logEntryId: string, reviewedBy: string): Promise<RiskLogEntry> => {
+    return apiRequest<RiskLogEntry>(`/risks/log-entries/${logEntryId}/reject?reviewed_by=${encodeURIComponent(reviewedBy)}`, {
+      method: 'POST',
+    });
+  },
+
+  // Delete a log entry
+  deleteLogEntry: async (logEntryId: string): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>(`/risks/log-entries/${logEntryId}`, {
+      method: 'DELETE',
+    });
   },
 };
 

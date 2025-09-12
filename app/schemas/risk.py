@@ -65,26 +65,83 @@ class Risk(RiskBase):
         from_attributes = True
 
 
-class RiskUpdateBase(BaseModel):
-    update_date: date
-    updated_by: str = Field(..., max_length=50)
-    update_type: str = Field(..., max_length=50)
-    update_summary: str = Field(..., max_length=300)
-    previous_risk_rating: str | None = Field(None, max_length=20)
-    new_risk_rating: str | None = Field(None, max_length=20)
+class RiskLogEntryBase(BaseModel):
+    # Entry metadata
+    entry_date: date
+    entry_type: str = Field(..., max_length=50)
+    entry_summary: str = Field(..., max_length=500)
+
+    # Risk rating changes
+    previous_risk_rating: int | None = Field(None, ge=1, le=25)
+    new_risk_rating: int | None = Field(None, ge=1, le=25)
+    previous_probability: int | None = Field(None, ge=1, le=5)
+    new_probability: int | None = Field(None, ge=1, le=5)
+    previous_impact: int | None = Field(None, ge=1, le=5)
+    new_impact: int | None = Field(None, ge=1, le=5)
+
+    # Actions and context
+    mitigation_actions_taken: str | None = Field(None, max_length=300)
+    risk_owner_at_time: str | None = Field(None, max_length=50)
+    supporting_evidence: str | None = Field(None, max_length=200)
+
+    # Workflow and approval
+    entry_status: str = Field(default="Draft", max_length=20)
+    created_by: str = Field(..., max_length=50)
+    reviewed_by: str | None = Field(None, max_length=50)
+    approved_date: date | None = None
+
+    # Additional context
+    business_justification: str | None = Field(None, max_length=300)
+    next_review_required: date | None = None
 
 
-class RiskUpdateCreate(RiskUpdateBase):
-    risk_id: str = Field(..., max_length=12)
+class RiskLogEntryCreate(RiskLogEntryBase):
+    risk_id: str = Field(..., max_length=20)
 
 
-class RiskUpdateResponse(RiskUpdateBase):
-    update_id: str
+class RiskLogEntryUpdate(BaseModel):
+    # Allow partial updates to log entries
+    entry_date: date | None = None
+    entry_type: str | None = Field(None, max_length=50)
+    entry_summary: str | None = Field(None, max_length=500)
+
+    # Risk rating changes
+    previous_risk_rating: int | None = Field(None, ge=1, le=25)
+    new_risk_rating: int | None = Field(None, ge=1, le=25)
+    previous_probability: int | None = Field(None, ge=1, le=5)
+    new_probability: int | None = Field(None, ge=1, le=5)
+    previous_impact: int | None = Field(None, ge=1, le=5)
+    new_impact: int | None = Field(None, ge=1, le=5)
+
+    # Actions and context
+    mitigation_actions_taken: str | None = Field(None, max_length=300)
+    risk_owner_at_time: str | None = Field(None, max_length=50)
+    supporting_evidence: str | None = Field(None, max_length=200)
+
+    # Workflow and approval
+    entry_status: str | None = Field(None, max_length=20)
+    reviewed_by: str | None = Field(None, max_length=50)
+    approved_date: date | None = None
+
+    # Additional context
+    business_justification: str | None = Field(None, max_length=300)
+    next_review_required: date | None = None
+
+
+class RiskLogEntryResponse(RiskLogEntryBase):
+    log_entry_id: str
     risk_id: str
     created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
+
+
+# Legacy aliases for backward compatibility during transition
+RiskUpdateBase = RiskLogEntryBase
+RiskUpdateCreate = RiskLogEntryCreate
+RiskUpdateResponse = RiskLogEntryResponse
 
 
 class PaginationMetadata(BaseModel):

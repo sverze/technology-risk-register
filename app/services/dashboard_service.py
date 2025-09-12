@@ -4,7 +4,7 @@ from decimal import Decimal
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
-from app.models.risk import Risk, RiskUpdate
+from app.models.risk import Risk, RiskLogEntry
 from app.schemas.dashboard import (
     BusinessServiceExposure,
     ControlPosture,
@@ -236,11 +236,11 @@ class DashboardService:
         # Recent rating changes (last 30 days)
         thirty_days_ago = date.today() - timedelta(days=30)
         recent_changes = (
-            self.db.query(RiskUpdate)
+            self.db.query(RiskLogEntry)
             .filter(
                 and_(
-                    RiskUpdate.update_date >= thirty_days_ago,
-                    RiskUpdate.update_type == "Risk Assessment Change",
+                    RiskLogEntry.entry_date >= thirty_days_ago,
+                    RiskLogEntry.entry_type == "Risk Assessment Update",
                 )
             )
             .count()
