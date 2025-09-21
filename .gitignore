@@ -187,3 +187,28 @@ yarn-error.log*
 # Documentation builds
 docs/_build/
 docs/build/
+
+# Terraform
+# State files - contain sensitive infrastructure state
+*.tfstate
+*.tfstate.*
+
+# Variable files - often contain sensitive configuration
+*.tfvars
+!terraform.tfvars.example
+
+# Terraform cache and temporary files
+.terraform/
+.terraform.lock.hcl
+
+# Terraform plan files - may contain sensitive data
+*.tfplan
+tfplan
+
+# Terraform crash logs
+crash.log
+crash.*.log
+
+# Terraform CLI configuration
+.terraformrc
+terraform.rc

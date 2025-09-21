@@ -78,7 +78,7 @@ terraform apply -var="project_id=your-project-id"
 make deploy  # (from terraform directory)
 
 # View logs from deployed service
-gcloud run services logs tail tech-risk-register --region=us-central1
+gcloud run services logs tail technology-risk-register --region=us-central1
 ```
 
 ## Architecture Overview
@@ -127,3 +127,24 @@ gcloud run services logs tail tech-risk-register --region=us-central1
   - Admin endpoints: `/api/v1/admin/` for database management
 - Environment variables for configuration
 - When confronted with UI related issues consider using playwright to test and diagnose the issue
+
+### Terraform Conventions
+**Files that should NOT be committed to git:**
+- `*.tfstate` and `*.tfstate.*` - Contains sensitive infrastructure state and resource IDs
+- `*.tfvars` - Contains sensitive configuration values (project IDs, secrets)
+- `.terraform/` directory - Provider cache and temporary files
+- `.terraform.lock.hcl` - Provider version locks (team decision - some commit, some don't)
+- `*.tfplan` files - Plan files may contain sensitive data
+- `crash.log` - Terraform crash logs
+
+**Files that SHOULD be committed:**
+- `*.tf` files - Infrastructure as code (main.tf, variables.tf, outputs.tf, etc.)
+- `terraform.tfvars.example` - Template showing required variables
+- `versions.tf` - Provider version constraints
+- `README.md`, `Makefile` - Documentation and automation
+
+**Security practices:**
+- Store actual tfvars files outside the repository or use environment variables
+- Use remote state backend (GCS, S3) for production deployments
+- Keep sensitive values in CI/CD secrets or external key management
+- Never commit state files - they contain actual resource identifiers and configuration
