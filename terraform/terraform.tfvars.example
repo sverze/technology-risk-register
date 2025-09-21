@@ -1,0 +1,27 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+# Required: Your GCP project ID
+project_id = "your-gcp-project-id"
+
+# Optional: GCP region (default: us-central1)
+# region = "us-central1"
+
+# Optional: Application name (default: tech-risk-register)
+# app_name = "tech-risk-register"
+
+# Optional: Environment (default: prod)
+# environment = "prod"
+
+# Optional: Custom domain name for the application
+# domain_name = "your-domain.com"
+
+# Optional: Cloud Run scaling configuration
+# min_instances = 0
+# max_instances = 10
+
+# Optional: Cloud Run resource limits
+# cpu_limit = "1"
+# memory_limit = "512Mi"
+
+# Optional: Allowed CORS origins
+# allowed_origins = ["https://your-domain.com", "https://www.your-domain.com"]

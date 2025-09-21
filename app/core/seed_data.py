@@ -463,63 +463,82 @@ def seed_sample_risks(db: Session) -> None:
     sample_updates = [
         # Update for critical cyber risk
         {
-            "update_id": "UPD-TR-2025-CYB-001-01",
+            "log_entry_id": "LOG-CYB-001-01",
             "risk_id": "TR-2025-CYB-001",
-            "update_date": date.today() - timedelta(days=30),
-            "updated_by": "Sarah Chen",
-            "update_type": "Risk Assessment Change",
-            "update_summary": "Risk rating increased due to new threat intelligence indicating targeting of our sector",
-            "previous_risk_rating": "12 (High)",
-            "new_risk_rating": "15 (Critical)",
+            "entry_date": date.today() - timedelta(days=30),
+            "created_by": "Sarah Chen",
+            "entry_type": "Risk Assessment Change",
+            "entry_summary": "Risk rating increased due to new threat intelligence indicating targeting of our sector",
+            "previous_risk_rating": 12,
+            "new_risk_rating": 15,
         },
         {
-            "update_id": "UPD-TR-2025-CYB-001-02",
+            "log_entry_id": "LOG-CYB-001-02",
             "risk_id": "TR-2025-CYB-001",
-            "update_date": date.today() - timedelta(days=14),
-            "updated_by": "Sarah Chen",
-            "update_type": "Control Update",
-            "update_summary": "Implemented additional endpoint detection capabilities, slightly reducing exposure",
-            "previous_risk_rating": "15 (Critical)",
-            "new_risk_rating": "15 (Critical)",
+            "entry_date": date.today() - timedelta(days=14),
+            "created_by": "Sarah Chen",
+            "entry_type": "Control Update",
+            "entry_summary": "Implemented additional endpoint detection capabilities, slightly reducing exposure",
+            "previous_risk_rating": 15,
+            "new_risk_rating": 15,
         },
         # Update for infrastructure risk
         {
-            "update_id": "UPD-TR-2025-INF-002-01",
+            "log_entry_id": "LOG-INF-002-01",
             "risk_id": "TR-2025-INF-002",
-            "update_date": date.today() - timedelta(days=21),
-            "updated_by": "Michael Rodriguez",
-            "update_type": "Status Change",
-            "update_summary": "UPS replacement project approved and scheduled for Q2 2025",
-            "previous_risk_rating": "12 (High)",
-            "new_risk_rating": "8 (Medium)",
+            "entry_date": date.today() - timedelta(days=21),
+            "created_by": "Michael Rodriguez",
+            "entry_type": "Status Change",
+            "entry_summary": "UPS replacement project approved and scheduled for Q2 2025",
+            "previous_risk_rating": 12,
+            "new_risk_rating": 8,
         },
         # Update for application risk
         {
-            "update_id": "UPD-TR-2025-APP-003-01",
+            "log_entry_id": "LOG-APP-003-01",
             "risk_id": "TR-2025-APP-003",
-            "update_date": date.today() - timedelta(days=35),
-            "updated_by": "Jennifer Park",
-            "update_type": "Review/Reassessment",
-            "update_summary": "Quarterly review completed. Migration timeline confirmed, risk level maintained",
-            "previous_risk_rating": "16 (Critical)",
-            "new_risk_rating": "16 (Critical)",
+            "entry_date": date.today() - timedelta(days=35),
+            "created_by": "Jennifer Park",
+            "entry_type": "Review/Reassessment",
+            "entry_summary": "Quarterly review completed. Migration timeline confirmed, risk level maintained",
+            "previous_risk_rating": 16,
+            "new_risk_rating": 16,
         },
         # Update for operational risk
         {
-            "update_id": "UPD-TR-2025-OPS-008-01",
+            "log_entry_id": "LOG-OPS-008-01",
             "risk_id": "TR-2025-OPS-008",
-            "update_date": date.today() - timedelta(days=10),
-            "updated_by": "Thomas Garcia",
-            "update_type": "Control Update",
-            "update_summary": "Knowledge transfer sessions initiated with junior staff. Documentation project 40% complete",
-            "previous_risk_rating": "12 (High)",
-            "new_risk_rating": "9 (Medium)",
+            "entry_date": date.today() - timedelta(days=10),
+            "created_by": "Thomas Garcia",
+            "entry_type": "Control Update",
+            "entry_summary": "Knowledge transfer sessions initiated with junior staff. Documentation project 40% complete",
+            "previous_risk_rating": 12,
+            "new_risk_rating": 9,
         },
     ]
 
     # Create RiskLogEntry objects and add to database
     for update_data in sample_updates:
-        update = RiskLogEntry(**update_data)
-        db.add(update)
+        # Check if log entry already exists
+        existing_entry = db.query(RiskLogEntry).filter(
+            RiskLogEntry.log_entry_id == update_data["log_entry_id"]
+        ).first()
+        
+        if existing_entry:
+            print(f"Skipping existing log entry: {update_data['log_entry_id']}")
+            continue
+        
+        try:
+            update = RiskLogEntry(**update_data)
+            db.add(update)
+            print(f"Added log entry: {update_data['log_entry_id']}")
+        except Exception as e:
+            print(f"Error creating log entry {update_data['log_entry_id']}: {e}")
+            continue
 
-    db.commit()
+    try:
+        db.commit()
+        print("Successfully committed risk log entries")
+    except Exception as e:
+        print(f"Error committing risk log entries: {e}")
+        db.rollback()

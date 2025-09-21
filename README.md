@@ -17,7 +17,7 @@ A modern web application for managing technology risks with executive dashboard 
 - **ORM**: SQLAlchemy with Alembic migrations
 - **Testing**: Pytest with coverage
 - **Code Quality**: Black, Ruff, MyPy, pre-commit hooks
-- **Deployment**: Docker, GCP Cloud Run, Cloud Storage
+- **Deployment**: Docker, GCP Cloud Run, Cloud Storage, Terraform IaC
 
 ## Quick Start
 
@@ -193,17 +193,54 @@ The dashboard provides 9 key components:
 The application runs with SQLite database file locally. Database is automatically created and seeded with dropdown values on startup.
 
 ### GCP Cloud Run (Production)
-1. SQLite database file stored in Cloud Storage bucket
-2. Cloud Run service mounts database file at startup
-3. Automatic scaling based on traffic
-4. Pay-per-use pricing model
+
+**Quick Deployment:**
+```bash
+# Deploy backend infrastructure and API
+./deploy.sh --project-id your-gcp-project-id
+
+# Deploy frontend to Cloud Storage + Load Balancer
+./deploy-frontend.sh --project-id your-gcp-project-id
+
+# Custom region and environment
+./deploy.sh --project-id your-project --region europe-west1 --environment staging
+```
+
+**Architecture:**
+- **Backend**: Cloud Run (FastAPI API, HTTPS)
+- **Frontend**: Cloud Storage + Global Load Balancer (React SPA, HTTP)
+- **Database**: SQLite file with Cloud Storage sync
+- **Container Registry**: Artifact Registry for Docker images
+- **Infrastructure**: Terraform IaC for reproducible deployments
+
+**Deployed Services:**
+- **Frontend URL**: `http://[LOAD_BALANCER_IP]/` (shown after deployment)
+- **Backend API**: `https://[CLOUD_RUN_URL]/api/v1/` (HTTPS with automatic SSL)
+- **API Documentation**: `https://[CLOUD_RUN_URL]/docs`
+
+**Features:**
+- **Separated Architecture**: Independent frontend and backend scaling
+- **Auto-scaling**: Backend scales 0-10 instances based on traffic
+- **Database Sync**: SQLite automatically synced with Cloud Storage
+- **CORS Configured**: Frontend can securely call HTTPS API
+- **Pay-per-use**: Only pay when processing requests (scales to zero)
+- **Global CDN**: Load Balancer provides edge caching for frontend
+
+**Destroy Infrastructure:**
+```bash
+cd terraform
+terraform destroy
+```
+
+📖 **[Complete Deployment Guide](./DEPLOYMENT.md)** - Detailed instructions, troubleshooting, and advanced configuration
 
 ### Environment Variables
 ```bash
 DATABASE_URL=sqlite:///./risk_register.db
-ALLOWED_ORIGINS=["http://localhost:3000"]
+ALLOWED_ORIGINS=["https://your-domain.com"]
 GCP_PROJECT_ID=your-project-id
 GCP_BUCKET_NAME=your-bucket-name
+ENVIRONMENT=prod
 ```
 
 ## Contributing

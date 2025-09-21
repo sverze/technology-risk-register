@@ -57,6 +57,30 @@ docker-compose down -v
 # - API Docs: http://localhost:8008/docs
 ```
 
+### GCP Deployment
+```bash
+# Quick deployment to GCP (after setting up gcloud auth)
+./deploy.sh --project-id your-gcp-project-id
+
+# Deploy with custom settings
+./deploy.sh --project-id your-project --region europe-west1 --environment staging
+
+# Skip Terraform (if infrastructure already exists)
+./deploy.sh --project-id your-project --skip-terraform
+
+# Manual Terraform operations
+cd terraform
+terraform init
+terraform plan -var="project_id=your-project-id"
+terraform apply -var="project_id=your-project-id"
+
+# Manual Cloud Run deployment
+make deploy  # (from terraform directory)
+
+# View logs from deployed service
+gcloud run services logs tail tech-risk-register --region=us-central1
+```
+
 ## Architecture Overview
 
 ### Backend Structure
@@ -93,8 +117,13 @@ docker-compose down -v
 - Pre-commit hooks enforce standards before commits
 
 ### Deployment
-- Local: SQLite database file
-- GCP: Cloud Run + SQLite file in Cloud Storage
-- Database migrations run automatically on startup
+- **Local**: SQLite database file, Docker Compose for full stack
+- **GCP Production**: Cloud Run + Cloud Storage for SQLite + Terraform IaC
+  - Container Registry: Artifact Registry for Docker images
+  - Database: SQLite file synced with Cloud Storage bucket
+  - Scaling: 0-10 instances, pay-per-use pricing
+  - HTTPS: Automatic SSL certificates, custom domain support
+  - Database migrations run automatically on startup
+  - Admin endpoints: `/api/v1/admin/` for database management
 - Environment variables for configuration
-- Whwn confronted with UI related issues consider using playwright to test and diagnose the issue
+- When confronted with UI related issues consider using playwright to test and diagnose the issue

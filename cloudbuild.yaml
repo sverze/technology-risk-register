@@ -1,0 +1,15 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_CONTAINER_REGISTRY}/technology-risk-register:latest'
+      - '.'
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_CONTAINER_REGISTRY}/technology-risk-register:latest']
+
+substitutions:
+  _CONTAINER_REGISTRY: 'us-central1-docker.pkg.dev/${PROJECT_ID}/technology-risk-register-repo'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
