@@ -131,12 +131,6 @@ export const RiskLogTimeline: React.FC<RiskLogTimelineProps> = ({
     }
   };
 
-  const getSeverityColor = (rating: number) => {
-    if (rating >= 20) return 'error';
-    if (rating >= 15) return 'warning';
-    if (rating >= 10) return 'info';
-    return 'success';
-  };
 
 
   if (isLoading) {
@@ -210,7 +204,7 @@ export const RiskLogTimeline: React.FC<RiskLogTimelineProps> = ({
 
         {logEntries.map((entry) => {
           const isExpanded = expandedEntries.has(entry.log_entry_id);
-          const hasRatingChange = entry.previous_risk_rating !== entry.new_risk_rating;
+          const hasRatingChange = entry.previous_net_exposure !== entry.new_net_exposure;
 
           return (
             <Box key={entry.log_entry_id} sx={{ position: 'relative', mb: 2 }}>
@@ -283,35 +277,39 @@ export const RiskLogTimeline: React.FC<RiskLogTimelineProps> = ({
                         Risk Rating Change
                       </Typography>
                       <Grid container spacing={2}>
-                        {entry.previous_probability && entry.new_probability && (
+                        {entry.previous_impact_rating && entry.new_impact_rating && (
                           <Grid item xs={4}>
-                            <Typography variant="caption" color="text.secondary">Probability</Typography>
+                            <Typography variant="caption" color="text.secondary">Impact Rating</Typography>
                             <Typography variant="body2">
-                              {entry.previous_probability} → {entry.new_probability}
+                              {entry.previous_impact_rating} → {entry.new_impact_rating}
                             </Typography>
                           </Grid>
                         )}
-                        {entry.previous_impact && entry.new_impact && (
+                        {entry.previous_likelihood_rating && entry.new_likelihood_rating && (
                           <Grid item xs={4}>
-                            <Typography variant="caption" color="text.secondary">Impact</Typography>
+                            <Typography variant="caption" color="text.secondary">Likelihood Rating</Typography>
                             <Typography variant="body2">
-                              {entry.previous_impact} → {entry.new_impact}
+                              {entry.previous_likelihood_rating} → {entry.new_likelihood_rating}
                             </Typography>
                           </Grid>
                         )}
-                        {entry.previous_risk_rating && entry.new_risk_rating && (
+                        {entry.previous_net_exposure && entry.new_net_exposure && (
                           <Grid item xs={4}>
-                            <Typography variant="caption" color="text.secondary">Overall Rating</Typography>
+                            <Typography variant="caption" color="text.secondary">Net Exposure</Typography>
                             <Box display="flex" alignItems="center" gap={1}>
                               <Chip
-                                label={entry.previous_risk_rating}
-                                color={getSeverityColor(entry.previous_risk_rating)}
+                                label={entry.previous_net_exposure}
+                                color={entry.previous_net_exposure.includes('Critical') ? 'error' :
+                                       entry.previous_net_exposure.includes('High') ? 'warning' :
+                                       entry.previous_net_exposure.includes('Medium') ? 'info' : 'success'}
                                 size="small"
                               />
                               <Typography variant="body2">→</Typography>
                               <Chip
-                                label={entry.new_risk_rating}
-                                color={getSeverityColor(entry.new_risk_rating)}
+                                label={entry.new_net_exposure}
+                                color={entry.new_net_exposure.includes('Critical') ? 'error' :
+                                       entry.new_net_exposure.includes('High') ? 'warning' :
+                                       entry.new_net_exposure.includes('Medium') ? 'info' : 'success'}
                                 size="small"
                               />
                             </Box>
@@ -456,9 +454,9 @@ export const RiskLogTimeline: React.FC<RiskLogTimelineProps> = ({
           <Typography paragraph>
             Are you sure you want to {approvalDialog.action} this log entry?
           </Typography>
-          {approvalDialog.action === 'approve' && approvalDialog.entry?.new_risk_rating && (
+          {approvalDialog.action === 'approve' && approvalDialog.entry?.new_net_exposure && (
             <Alert severity="info" sx={{ mt: 2 }}>
-              Approving this entry will update the risk's current rating to {approvalDialog.entry.new_risk_rating}.
+              Approving this entry will update the risk's net exposure to {approvalDialog.entry.new_net_exposure}.
             </Alert>
           )}
         </DialogContent>

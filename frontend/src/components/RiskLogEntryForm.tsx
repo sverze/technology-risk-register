@@ -44,12 +44,12 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
     entry_date: new Date(),
     entry_type: 'General Update' as typeof RISK_LOG_ENTRY_TYPES[number],
     entry_summary: '',
-    previous_risk_rating: undefined as number | undefined,
-    new_risk_rating: undefined as number | undefined,
-    previous_probability: undefined as number | undefined,
-    new_probability: undefined as number | undefined,
-    previous_impact: undefined as number | undefined,
-    new_impact: undefined as number | undefined,
+    previous_net_exposure: undefined as string | undefined,
+    new_net_exposure: undefined as string | undefined,
+    previous_impact_rating: undefined as string | undefined,
+    new_impact_rating: undefined as string | undefined,
+    previous_likelihood_rating: undefined as string | undefined,
+    new_likelihood_rating: undefined as string | undefined,
     mitigation_actions_taken: '',
     risk_owner_at_time: risk.risk_owner,
     supporting_evidence: '',
@@ -67,12 +67,12 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
         entry_date: new Date(logEntry.entry_date),
         entry_type: logEntry.entry_type as typeof RISK_LOG_ENTRY_TYPES[number],
         entry_summary: logEntry.entry_summary || '',
-        previous_risk_rating: logEntry.previous_risk_rating,
-        new_risk_rating: logEntry.new_risk_rating,
-        previous_probability: logEntry.previous_probability,
-        new_probability: logEntry.new_probability,
-        previous_impact: logEntry.previous_impact,
-        new_impact: logEntry.new_impact,
+        previous_net_exposure: logEntry.previous_net_exposure,
+        new_net_exposure: logEntry.new_net_exposure,
+        previous_impact_rating: logEntry.previous_impact_rating,
+        new_impact_rating: logEntry.new_impact_rating,
+        previous_likelihood_rating: logEntry.previous_likelihood_rating,
+        new_likelihood_rating: logEntry.new_likelihood_rating,
         mitigation_actions_taken: logEntry.mitigation_actions_taken || '',
         risk_owner_at_time: logEntry.risk_owner_at_time || risk.risk_owner,
         supporting_evidence: logEntry.supporting_evidence || '',
@@ -86,12 +86,12 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
         entry_date: new Date(),
         entry_type: 'General Update',
         entry_summary: '',
-        previous_risk_rating: undefined,
-        new_risk_rating: undefined,
-        previous_probability: undefined,
-        new_probability: undefined,
-        previous_impact: undefined,
-        new_impact: undefined,
+        previous_net_exposure: undefined,
+        new_net_exposure: undefined,
+        previous_impact_rating: undefined,
+        new_impact_rating: undefined,
+        previous_likelihood_rating: undefined,
+        new_likelihood_rating: undefined,
         mitigation_actions_taken: '',
         risk_owner_at_time: risk.risk_owner,
         supporting_evidence: '',
@@ -113,23 +113,16 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
       newErrors.entry_summary = 'Entry summary is required';
     }
 
-    // Validate risk rating changes if provided
-    if (formData.new_risk_rating !== undefined) {
-      if (formData.new_risk_rating < 1 || formData.new_risk_rating > 25) {
-        newErrors.new_risk_rating = 'Risk rating must be between 1 and 25';
-      }
+    // Validate Business Disruption rating changes if provided
+    const validImpactRatings = ['Low', 'Moderate', 'Major', 'Catastrophic'];
+    const validLikelihoodRatings = ['Remote', 'Unlikely', 'Possible', 'Probable'];
+
+    if (formData.new_impact_rating && !validImpactRatings.includes(formData.new_impact_rating)) {
+      newErrors.new_impact_rating = 'Invalid impact rating';
     }
 
-    if (formData.new_probability !== undefined) {
-      if (formData.new_probability < 1 || formData.new_probability > 5) {
-        newErrors.new_probability = 'Probability must be between 1 and 5';
-      }
-    }
-
-    if (formData.new_impact !== undefined) {
-      if (formData.new_impact < 1 || formData.new_impact > 5) {
-        newErrors.new_impact = 'Impact must be between 1 and 5';
-      }
+    if (formData.new_likelihood_rating && !validLikelihoodRatings.includes(formData.new_likelihood_rating)) {
+      newErrors.new_likelihood_rating = 'Invalid likelihood rating';
     }
 
     setErrors(newErrors);
@@ -144,12 +137,12 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
         entry_date: formData.entry_date.toISOString().split('T')[0],
         entry_type: formData.entry_type,
         entry_summary: formData.entry_summary,
-        previous_risk_rating: formData.previous_risk_rating,
-        new_risk_rating: formData.new_risk_rating,
-        previous_probability: formData.previous_probability,
-        new_probability: formData.new_probability,
-        previous_impact: formData.previous_impact,
-        new_impact: formData.new_impact,
+        previous_net_exposure: formData.previous_net_exposure,
+        new_net_exposure: formData.new_net_exposure,
+        previous_impact_rating: formData.previous_impact_rating,
+        new_impact_rating: formData.new_impact_rating,
+        previous_likelihood_rating: formData.previous_likelihood_rating,
+        new_likelihood_rating: formData.new_likelihood_rating,
         mitigation_actions_taken: formData.mitigation_actions_taken || undefined,
         risk_owner_at_time: formData.risk_owner_at_time || undefined,
         supporting_evidence: formData.supporting_evidence || undefined,
@@ -169,12 +162,12 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
         entry_date: formData.entry_date.toISOString().split('T')[0],
         entry_type: formData.entry_type,
         entry_summary: formData.entry_summary,
-        previous_risk_rating: formData.previous_risk_rating,
-        new_risk_rating: formData.new_risk_rating,
-        previous_probability: formData.previous_probability,
-        new_probability: formData.new_probability,
-        previous_impact: formData.previous_impact,
-        new_impact: formData.new_impact,
+        previous_net_exposure: formData.previous_net_exposure,
+        new_net_exposure: formData.new_net_exposure,
+        previous_impact_rating: formData.previous_impact_rating,
+        new_impact_rating: formData.new_impact_rating,
+        previous_likelihood_rating: formData.previous_likelihood_rating,
+        new_likelihood_rating: formData.new_likelihood_rating,
         mitigation_actions_taken: formData.mitigation_actions_taken || undefined,
         risk_owner_at_time: formData.risk_owner_at_time || undefined,
         supporting_evidence: formData.supporting_evidence || undefined,
@@ -195,21 +188,38 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
   const handleAutoFillCurrentRating = () => {
     setFormData(prev => ({
       ...prev,
-      previous_risk_rating: risk.current_risk_rating,
-      previous_probability: risk.current_probability,
-      previous_impact: risk.current_impact,
+      previous_net_exposure: risk.business_disruption_net_exposure,
+      previous_impact_rating: risk.business_disruption_impact_rating,
+      previous_likelihood_rating: risk.business_disruption_likelihood_rating,
     }));
   };
 
-  const calculateNewRating = () => {
-    if (formData.new_probability && formData.new_impact) {
-      const newRating = formData.new_probability * formData.new_impact;
-      setFormData(prev => ({ ...prev, new_risk_rating: newRating }));
+  const calculateNewNetExposure = () => {
+    if (formData.new_impact_rating && formData.new_likelihood_rating) {
+      // Map ratings to matrix values
+      const impactValues = { 'Low': 1, 'Moderate': 2, 'Major': 3, 'Catastrophic': 4 };
+      const likelihoodValues = { 'Remote': 1, 'Unlikely': 2, 'Possible': 3, 'Probable': 4 };
+
+      const impactValue = impactValues[formData.new_impact_rating as keyof typeof impactValues];
+      const likelihoodValue = likelihoodValues[formData.new_likelihood_rating as keyof typeof likelihoodValues];
+
+      if (impactValue && likelihoodValue) {
+        const matrixValue = impactValue * likelihoodValue;
+        let exposureLevel;
+
+        if (matrixValue >= 1 && matrixValue <= 3) exposureLevel = 'Low';
+        else if (matrixValue >= 4 && matrixValue <= 6) exposureLevel = 'Medium';
+        else if (matrixValue >= 8 && matrixValue <= 12) exposureLevel = 'High';
+        else if (matrixValue >= 15 && matrixValue <= 16) exposureLevel = 'Critical';
+
+        const newExposure = `${exposureLevel} (${matrixValue})`;
+        setFormData(prev => ({ ...prev, new_net_exposure: newExposure }));
+      }
     }
   };
 
-  const hasRatingChange = formData.previous_risk_rating !== formData.new_risk_rating &&
-                         formData.new_risk_rating !== undefined;
+  const hasRatingChange = formData.previous_net_exposure !== formData.new_net_exposure &&
+                         formData.new_net_exposure !== undefined;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -268,10 +278,10 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
               />
             </Grid>
 
-            {/* Risk Rating Changes */}
+            {/* Business Disruption Assessment Changes */}
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
-                Risk Rating Changes (Optional)
+                Business Disruption Assessment Changes (Optional)
               </Typography>
               <Box sx={{ mb: 2 }}>
                 <Button
@@ -285,108 +295,104 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={calculateNewRating}
-                  disabled={!formData.new_probability || !formData.new_impact}
+                  onClick={calculateNewNetExposure}
+                  disabled={!formData.new_impact_rating || !formData.new_likelihood_rating}
                 >
-                  Calculate New Rating
+                  Calculate New Net Exposure
                 </Button>
               </Box>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Previous Impact Rating</InputLabel>
+                <Select
+                  value={formData.previous_impact_rating || ''}
+                  label="Previous Impact Rating"
+                  onChange={(e) => setFormData(prev => ({ ...prev, previous_impact_rating: e.target.value || undefined }))}
+                >
+                  <MenuItem value="Low">Low</MenuItem>
+                  <MenuItem value="Moderate">Moderate</MenuItem>
+                  <MenuItem value="Major">Major</MenuItem>
+                  <MenuItem value="Catastrophic">Catastrophic</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth error={!!errors.new_impact_rating}>
+                <InputLabel>New Impact Rating</InputLabel>
+                <Select
+                  value={formData.new_impact_rating || ''}
+                  label="New Impact Rating"
+                  onChange={(e) => setFormData(prev => ({ ...prev, new_impact_rating: e.target.value || undefined }))}
+                >
+                  <MenuItem value="Low">Low</MenuItem>
+                  <MenuItem value="Moderate">Moderate</MenuItem>
+                  <MenuItem value="Major">Major</MenuItem>
+                  <MenuItem value="Catastrophic">Catastrophic</MenuItem>
+                </Select>
+                {errors.new_impact_rating && <Typography color="error" variant="caption">{errors.new_impact_rating}</Typography>}
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Previous Likelihood Rating</InputLabel>
+                <Select
+                  value={formData.previous_likelihood_rating || ''}
+                  label="Previous Likelihood Rating"
+                  onChange={(e) => setFormData(prev => ({ ...prev, previous_likelihood_rating: e.target.value || undefined }))}
+                >
+                  <MenuItem value="Remote">Remote</MenuItem>
+                  <MenuItem value="Unlikely">Unlikely</MenuItem>
+                  <MenuItem value="Possible">Possible</MenuItem>
+                  <MenuItem value="Probable">Probable</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth error={!!errors.new_likelihood_rating}>
+                <InputLabel>New Likelihood Rating</InputLabel>
+                <Select
+                  value={formData.new_likelihood_rating || ''}
+                  label="New Likelihood Rating"
+                  onChange={(e) => setFormData(prev => ({ ...prev, new_likelihood_rating: e.target.value || undefined }))}
+                >
+                  <MenuItem value="Remote">Remote</MenuItem>
+                  <MenuItem value="Unlikely">Unlikely</MenuItem>
+                  <MenuItem value="Possible">Possible</MenuItem>
+                  <MenuItem value="Probable">Probable</MenuItem>
+                </Select>
+                {errors.new_likelihood_rating && <Typography color="error" variant="caption">{errors.new_likelihood_rating}</Typography>}
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Previous Probability (1-5)"
-                type="number"
-                inputProps={{ min: 1, max: 5 }}
-                value={formData.previous_probability || ''}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  previous_probability: e.target.value ? parseInt(e.target.value) : undefined
-                }))}
+                label="Previous Net Exposure"
+                value={formData.previous_net_exposure || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, previous_net_exposure: e.target.value || undefined }))}
+                helperText="e.g., 'Critical (15)' or 'High (12)'"
               />
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="New Probability (1-5)"
-                type="number"
-                inputProps={{ min: 1, max: 5 }}
-                value={formData.new_probability || ''}
-                onChange={(e) => {
-                  const value = e.target.value ? parseInt(e.target.value) : undefined;
-                  setFormData(prev => ({ ...prev, new_probability: value }));
-                }}
-                error={!!errors.new_probability}
-                helperText={errors.new_probability}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Previous Impact (1-5)"
-                type="number"
-                inputProps={{ min: 1, max: 5 }}
-                value={formData.previous_impact || ''}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  previous_impact: e.target.value ? parseInt(e.target.value) : undefined
-                }))}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="New Impact (1-5)"
-                type="number"
-                inputProps={{ min: 1, max: 5 }}
-                value={formData.new_impact || ''}
-                onChange={(e) => {
-                  const value = e.target.value ? parseInt(e.target.value) : undefined;
-                  setFormData(prev => ({ ...prev, new_impact: value }));
-                }}
-                error={!!errors.new_impact}
-                helperText={errors.new_impact}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Previous Risk Rating"
-                type="number"
-                inputProps={{ min: 1, max: 25 }}
-                value={formData.previous_risk_rating || ''}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  previous_risk_rating: e.target.value ? parseInt(e.target.value) : undefined
-                }))}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="New Risk Rating"
-                type="number"
-                inputProps={{ min: 1, max: 25 }}
-                value={formData.new_risk_rating || ''}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  new_risk_rating: e.target.value ? parseInt(e.target.value) : undefined
-                }))}
-                error={!!errors.new_risk_rating}
-                helperText={errors.new_risk_rating}
+                label="New Net Exposure"
+                value={formData.new_net_exposure || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, new_net_exposure: e.target.value || undefined }))}
+                helperText="Will be auto-calculated when using the Calculate button above"
               />
             </Grid>
 
             {hasRatingChange && (
               <Grid item xs={12}>
                 <Alert severity="info">
-                  Risk rating will change from {formData.previous_risk_rating} to {formData.new_risk_rating}
+                  Net exposure will change from {formData.previous_net_exposure} to {formData.new_net_exposure}
                   {formData.entry_status === 'Submitted' && ' when this entry is approved.'}
                 </Alert>
               </Grid>
@@ -480,7 +486,7 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
                   <MenuItem value="Submitted">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Chip label="Submitted" color="info" size="small" />
-                      <Typography>Submit for approval {hasRatingChange && '(will update risk rating when approved)'}</Typography>
+                      <Typography>Submit for approval {hasRatingChange && '(will update net exposure when approved)'}</Typography>
                     </Box>
                   </MenuItem>
                 </Select>

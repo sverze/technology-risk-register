@@ -9,8 +9,6 @@ import {
   MenuItem,
   Alert,
   CircularProgress,
-  Switch,
-  FormControlLabel,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useCreateRisk } from '@/hooks/useRisks';
@@ -27,33 +25,40 @@ export const AddRisk: React.FC = () => {
     risk_title: '',
     risk_description: '',
     risk_category: '',
-    inherent_probability: 1,
-    inherent_impact: 1,
-    current_probability: 1,
-    current_impact: 1,
     risk_status: 'Active',
     risk_response_strategy: '',
     planned_mitigations: '',
-    preventative_controls_status: 'Partial',
+
+    // Control Management Fields - Updated naming
+    preventative_controls_coverage: 'Not Applicable',
+    preventative_controls_effectiveness: 'Not Applicable',
     preventative_controls_description: '',
-    detective_controls_status: 'Partial',
+    detective_controls_coverage: 'Not Applicable',
+    detective_controls_effectiveness: 'Not Applicable',
     detective_controls_description: '',
-    corrective_controls_status: 'Partial',
+    corrective_controls_coverage: 'Not Applicable',
+    corrective_controls_effectiveness: 'Not Applicable',
     corrective_controls_description: '',
-    control_gaps: '',
+
+    // Ownership & Systems Fields
     risk_owner: '',
     risk_owner_department: '',
     systems_affected: '',
     technology_domain: '',
-    ibs_impact: false,
-    number_of_ibs_affected: '',
-    business_criticality: 'Medium',
+
+    // Business Disruption Assessment Fields - New model
+    ibs_affected: '',
+    business_disruption_impact_rating: 'Low',
+    business_disruption_impact_description: '',
+    business_disruption_likelihood_rating: 'Remote',
+    business_disruption_likelihood_description: '',
+
+    // Financial Impact Fields
     financial_impact_low: '',
     financial_impact_high: '',
-    rto_hours: '',
-    rpo_hours: '',
-    sla_impact: '',
-    slo_impact: '',
+    financial_impact_notes: '',
+
+    // Review & Timeline Fields
     date_identified: new Date().toISOString().split('T')[0],
     last_reviewed: new Date().toISOString().split('T')[0],
     next_review_date: '',
@@ -84,15 +89,6 @@ export const AddRisk: React.FC = () => {
         : undefined,
       financial_impact_high: formData.financial_impact_high
         ? Number(formData.financial_impact_high)
-        : undefined,
-      rto_hours: formData.rto_hours
-        ? Number(formData.rto_hours)
-        : undefined,
-      rpo_hours: formData.rpo_hours
-        ? Number(formData.rpo_hours)
-        : undefined,
-      number_of_ibs_affected: formData.number_of_ibs_affected
-        ? Number(formData.number_of_ibs_affected)
         : undefined,
     };
 
@@ -166,9 +162,33 @@ export const AddRisk: React.FC = () => {
                 value={formData.technology_domain}
                 onChange={(e) => handleChange('technology_domain', e.target.value)}
               >
-                {dropdowns?.categories?.map((category) => (
-                  <MenuItem key={category} value={category}>
-                    {category}
+                {dropdowns?.technology_domains?.map((domain) => (
+                  <MenuItem key={domain} value={domain}>
+                    {domain}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            {/* Business Disruption Assessment Section */}
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Business Disruption Assessment
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                fullWidth
+                required
+                label="Business Disruption Impact Rating"
+                value={formData.business_disruption_impact_rating}
+                onChange={(e) => handleChange('business_disruption_impact_rating', e.target.value)}
+              >
+                {dropdowns?.business_disruption_impact_ratings?.map((rating) => (
+                  <MenuItem key={rating} value={rating}>
+                    {rating}
                   </MenuItem>
                 ))}
               </TextField>
@@ -179,67 +199,54 @@ export const AddRisk: React.FC = () => {
                 select
                 fullWidth
                 required
-                label="Inherent Probability (1-5)"
-                value={formData.inherent_probability}
-                onChange={(e) => handleChange('inherent_probability', Number(e.target.value))}
+                label="Business Disruption Likelihood Rating"
+                value={formData.business_disruption_likelihood_rating}
+                onChange={(e) => handleChange('business_disruption_likelihood_rating', e.target.value)}
               >
-                {[1, 2, 3, 4, 5].map((num) => (
-                  <MenuItem key={num} value={num}>
-                    {num}
+                {dropdowns?.business_disruption_likelihood_ratings?.map((rating) => (
+                  <MenuItem key={rating} value={rating}>
+                    {rating}
                   </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
-                select
                 fullWidth
                 required
-                label="Inherent Impact (1-5)"
-                value={formData.inherent_impact}
-                onChange={(e) => handleChange('inherent_impact', Number(e.target.value))}
-              >
-                {[1, 2, 3, 4, 5].map((num) => (
-                  <MenuItem key={num} value={num}>
-                    {num}
-                  </MenuItem>
-                ))}
-              </TextField>
+                multiline
+                rows={4}
+                label="Business Disruption Impact Description"
+                value={formData.business_disruption_impact_description}
+                onChange={(e) => handleChange('business_disruption_impact_description', e.target.value)}
+                error={!!validationErrors.business_disruption_impact_description}
+                helperText={validationErrors.business_disruption_impact_description || 'Describe the potential business impact if this risk occurs'}
+              />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
-                select
                 fullWidth
                 required
-                label="Current Probability (1-5)"
-                value={formData.current_probability}
-                onChange={(e) => handleChange('current_probability', Number(e.target.value))}
-              >
-                {[1, 2, 3, 4, 5].map((num) => (
-                  <MenuItem key={num} value={num}>
-                    {num}
-                  </MenuItem>
-                ))}
-              </TextField>
+                multiline
+                rows={4}
+                label="Business Disruption Likelihood Description"
+                value={formData.business_disruption_likelihood_description}
+                onChange={(e) => handleChange('business_disruption_likelihood_description', e.target.value)}
+                error={!!validationErrors.business_disruption_likelihood_description}
+                helperText={validationErrors.business_disruption_likelihood_description || 'Describe the likelihood and factors that could lead to this risk occurring'}
+              />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
-                select
                 fullWidth
-                required
-                label="Current Impact (1-5)"
-                value={formData.current_impact}
-                onChange={(e) => handleChange('current_impact', Number(e.target.value))}
-              >
-                {[1, 2, 3, 4, 5].map((num) => (
-                  <MenuItem key={num} value={num}>
-                    {num}
-                  </MenuItem>
-                ))}
-              </TextField>
+                label="IBS Affected"
+                value={formData.ibs_affected}
+                onChange={(e) => handleChange('ibs_affected', e.target.value)}
+                helperText="List the Important Business Services that would be affected by this risk"
+              />
             </Grid>
 
             <Grid item xs={12}>
@@ -271,21 +278,6 @@ export const AddRisk: React.FC = () => {
               </TextField>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                fullWidth
-                required
-                label="Business Criticality"
-                value={formData.business_criticality}
-                onChange={(e) => handleChange('business_criticality', e.target.value)}
-              >
-                <MenuItem value="Critical">Critical</MenuItem>
-                <MenuItem value="High">High</MenuItem>
-                <MenuItem value="Medium">Medium</MenuItem>
-                <MenuItem value="Low">Low</MenuItem>
-              </TextField>
-            </Grid>
 
             <Grid item xs={12} sm={6}>
               <TextField
@@ -386,13 +378,13 @@ export const AddRisk: React.FC = () => {
                 select
                 fullWidth
                 required
-                label="Preventative Controls Status"
-                value={formData.preventative_controls_status}
-                onChange={(e) => handleChange('preventative_controls_status', e.target.value)}
+                label="Preventative Controls Coverage"
+                value={formData.preventative_controls_coverage}
+                onChange={(e) => handleChange('preventative_controls_coverage', e.target.value)}
               >
-                {dropdowns?.controls_preventative?.map((status) => (
-                  <MenuItem key={status} value={status}>
-                    {status}
+                {dropdowns?.controls_coverage?.map((coverage) => (
+                  <MenuItem key={coverage} value={coverage}>
+                    {coverage}
                   </MenuItem>
                 ))}
               </TextField>
@@ -403,13 +395,13 @@ export const AddRisk: React.FC = () => {
                 select
                 fullWidth
                 required
-                label="Detective Controls Status"
-                value={formData.detective_controls_status}
-                onChange={(e) => handleChange('detective_controls_status', e.target.value)}
+                label="Detective Controls Coverage"
+                value={formData.detective_controls_coverage}
+                onChange={(e) => handleChange('detective_controls_coverage', e.target.value)}
               >
-                {dropdowns?.controls_detective?.map((status) => (
-                  <MenuItem key={status} value={status}>
-                    {status}
+                {dropdowns?.controls_coverage?.map((coverage) => (
+                  <MenuItem key={coverage} value={coverage}>
+                    {coverage}
                   </MenuItem>
                 ))}
               </TextField>
@@ -420,13 +412,64 @@ export const AddRisk: React.FC = () => {
                 select
                 fullWidth
                 required
-                label="Corrective Controls Status"
-                value={formData.corrective_controls_status}
-                onChange={(e) => handleChange('corrective_controls_status', e.target.value)}
+                label="Corrective Controls Coverage"
+                value={formData.corrective_controls_coverage}
+                onChange={(e) => handleChange('corrective_controls_coverage', e.target.value)}
               >
-                {dropdowns?.controls_corrective?.map((status) => (
-                  <MenuItem key={status} value={status}>
-                    {status}
+                {dropdowns?.controls_coverage?.map((coverage) => (
+                  <MenuItem key={coverage} value={coverage}>
+                    {coverage}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                select
+                fullWidth
+                required
+                label="Preventative Controls Effectiveness"
+                value={formData.preventative_controls_effectiveness}
+                onChange={(e) => handleChange('preventative_controls_effectiveness', e.target.value)}
+              >
+                {dropdowns?.controls_effectiveness?.map((effectiveness) => (
+                  <MenuItem key={effectiveness} value={effectiveness}>
+                    {effectiveness}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                select
+                fullWidth
+                required
+                label="Detective Controls Effectiveness"
+                value={formData.detective_controls_effectiveness}
+                onChange={(e) => handleChange('detective_controls_effectiveness', e.target.value)}
+              >
+                {dropdowns?.controls_effectiveness?.map((effectiveness) => (
+                  <MenuItem key={effectiveness} value={effectiveness}>
+                    {effectiveness}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                select
+                fullWidth
+                required
+                label="Corrective Controls Effectiveness"
+                value={formData.corrective_controls_effectiveness}
+                onChange={(e) => handleChange('corrective_controls_effectiveness', e.target.value)}
+              >
+                {dropdowns?.controls_effectiveness?.map((effectiveness) => (
+                  <MenuItem key={effectiveness} value={effectiveness}>
+                    {effectiveness}
                   </MenuItem>
                 ))}
               </TextField>
@@ -436,10 +479,11 @@ export const AddRisk: React.FC = () => {
               <TextField
                 fullWidth
                 multiline
-                rows={2}
+                rows={3}
                 label="Preventative Controls Description"
                 value={formData.preventative_controls_description}
                 onChange={(e) => handleChange('preventative_controls_description', e.target.value)}
+                helperText="Describe preventative controls in place to reduce likelihood of occurrence"
               />
             </Grid>
 
@@ -447,10 +491,11 @@ export const AddRisk: React.FC = () => {
               <TextField
                 fullWidth
                 multiline
-                rows={2}
+                rows={3}
                 label="Detective Controls Description"
                 value={formData.detective_controls_description}
                 onChange={(e) => handleChange('detective_controls_description', e.target.value)}
+                helperText="Describe detective controls in place to identify when risk occurs"
               />
             </Grid>
 
@@ -458,28 +503,18 @@ export const AddRisk: React.FC = () => {
               <TextField
                 fullWidth
                 multiline
-                rows={2}
+                rows={3}
                 label="Corrective Controls Description"
                 value={formData.corrective_controls_description}
                 onChange={(e) => handleChange('corrective_controls_description', e.target.value)}
+                helperText="Describe corrective controls in place to mitigate impact when risk occurs"
               />
             </Grid>
 
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={2}
-                label="Control Gaps"
-                value={formData.control_gaps}
-                onChange={(e) => handleChange('control_gaps', e.target.value)}
-              />
-            </Grid>
-
-            {/* Business Impact Section */}
+            {/* Financial Impact Section */}
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
-                Business Impact Assessment
+                Financial Impact Assessment
               </Typography>
             </Grid>
 
@@ -503,65 +538,15 @@ export const AddRisk: React.FC = () => {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
-                type="number"
-                label="RTO (Hours)"
-                value={formData.rto_hours}
-                onChange={(e) => handleChange('rto_hours', e.target.value)}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                type="number"
-                label="RPO (Hours)"
-                value={formData.rpo_hours}
-                onChange={(e) => handleChange('rpo_hours', e.target.value)}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.ibs_impact}
-                    onChange={(e) => handleChange('ibs_impact', e.target.checked)}
-                  />
-                }
-                label="IBS Impact"
-              />
-            </Grid>
-
-            {formData.ibs_impact && (
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Number of IBS Affected"
-                  value={formData.number_of_ibs_affected}
-                  onChange={(e) => handleChange('number_of_ibs_affected', e.target.value)}
-                />
-              </Grid>
-            )}
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="SLA Impact"
-                value={formData.sla_impact}
-                onChange={(e) => handleChange('sla_impact', e.target.value)}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="SLO Impact"
-                value={formData.slo_impact}
-                onChange={(e) => handleChange('slo_impact', e.target.value)}
+                multiline
+                rows={2}
+                label="Financial Impact Notes"
+                value={formData.financial_impact_notes}
+                onChange={(e) => handleChange('financial_impact_notes', e.target.value)}
+                helperText="Additional context for the financial impact estimates (e.g., calculation method, assumptions)"
               />
             </Grid>
 

@@ -23,29 +23,23 @@ class Risk(Base):
     risk_id = Column(String(12), primary_key=True, index=True)
     risk_title = Column(String(100), nullable=False)
     risk_category = Column(String(50), nullable=False)
-    risk_description = Column(String(400), nullable=False)
-
-    # Risk Assessment Fields
-    inherent_probability = Column(Integer, nullable=False)  # 1-5
-    inherent_impact = Column(Integer, nullable=False)  # 1-5
-    inherent_risk_rating = Column(Integer, nullable=False)  # Calculated
-    current_probability = Column(Integer, nullable=False)  # 1-5
-    current_impact = Column(Integer, nullable=False)  # 1-5
-    current_risk_rating = Column(Integer, nullable=False)  # Calculated
+    risk_description = Column(String(500), nullable=False)  # Increased from 400
 
     # Risk Management Fields
     risk_status = Column(String(20), nullable=False)
     risk_response_strategy = Column(String(20), nullable=False)
     planned_mitigations = Column(String(200))
 
-    # Control Management Fields
-    preventative_controls_status = Column(String(20), nullable=False)
-    preventative_controls_description = Column(String(150))
-    detective_controls_status = Column(String(20), nullable=False)
-    detective_controls_description = Column(String(150))
-    corrective_controls_status = Column(String(20), nullable=False)
-    corrective_controls_description = Column(String(150))
-    control_gaps = Column(String(150))
+    # Control Management Fields - Updated naming and increased description length
+    preventative_controls_coverage = Column(String(30), nullable=False)
+    preventative_controls_effectiveness = Column(String(30), nullable=False)
+    preventative_controls_description = Column(String(500))  # Increased from 150
+    detective_controls_coverage = Column(String(30), nullable=False)
+    detective_controls_effectiveness = Column(String(30), nullable=False)
+    detective_controls_description = Column(String(500))  # Increased from 150
+    corrective_controls_coverage = Column(String(30), nullable=False)
+    corrective_controls_effectiveness = Column(String(30), nullable=False)
+    corrective_controls_description = Column(String(500))  # Increased from 150
 
     # Ownership & Systems Fields
     risk_owner = Column(String(50), nullable=False)
@@ -53,16 +47,18 @@ class Risk(Base):
     systems_affected = Column(String(150))
     technology_domain = Column(String(50), nullable=False)
 
-    # Business Impact Fields
-    ibs_impact = Column(Boolean, nullable=False)
-    number_of_ibs_affected = Column(Integer)
-    business_criticality = Column(String(20), nullable=False)
+    # Business Disruption Assessment Fields - New model
+    ibs_affected = Column(String(200))  # Replaced boolean ibs_impact
+    business_disruption_impact_rating = Column(String(20), nullable=False)  # Low/Moderate/Major/Catastrophic
+    business_disruption_impact_description = Column(String(400), nullable=False)
+    business_disruption_likelihood_rating = Column(String(20), nullable=False)  # Remote/Unlikely/Possible/Probable
+    business_disruption_likelihood_description = Column(String(400), nullable=False)
+    business_disruption_net_exposure = Column(String(30), nullable=False)  # Auto-calculated
+
+    # Financial Impact Fields - Keep existing with addition
     financial_impact_low = Column(Numeric(12, 2))
     financial_impact_high = Column(Numeric(12, 2))
-    rto_hours = Column(Integer)
-    rpo_hours = Column(Integer)
-    sla_impact = Column(String(100))
-    slo_impact = Column(String(100))
+    financial_impact_notes = Column(String(200))  # New field
 
     # Review & Timeline Fields
     date_identified = Column(Date, nullable=False)
@@ -85,10 +81,59 @@ class Risk(Base):
         order_by="desc(RiskLogEntry.created_at)",
     )
 
-    def calculate_risk_ratings(self) -> None:
-        """Calculate inherent and current risk ratings."""
-        self.inherent_risk_rating = self.inherent_probability * self.inherent_impact
-        self.current_risk_rating = self.current_probability * self.current_impact
+    def calculate_net_exposure(self) -> None:
+        """Calculate business disruption net exposure based on impact and likelihood matrix."""
+        # Impact × Likelihood matrix mapping
+        impact_values = {
+            "Low": 1,
+            "Moderate": 2,
+            "Major": 3,
+            "Catastrophic": 4
+        }
+
+        likelihood_values = {
+            "Remote": 1,
+            "Unlikely": 2,
+            "Possible": 3,
+            "Probable": 4
+        }
+
+        # Matrix calculation: values 1-16
+        matrix = {
+            (1, 1): 1,   # Low-Remote
+            (1, 2): 2,   # Low-Unlikely
+            (1, 3): 3,   # Low-Possible
+            (1, 4): 5,   # Low-Probable
+            (2, 1): 4,   # Moderate-Remote
+            (2, 2): 6,   # Moderate-Unlikely
+            (2, 3): 7,   # Moderate-Possible
+            (2, 4): 9,   # Moderate-Probable
+            (3, 1): 8,   # Major-Remote
+            (3, 2): 10,  # Major-Unlikely
+            (3, 3): 11,  # Major-Possible
+            (3, 4): 13,  # Major-Probable
+            (4, 1): 12,  # Catastrophic-Remote
+            (4, 2): 14,  # Catastrophic-Unlikely
+            (4, 3): 15,  # Catastrophic-Possible
+            (4, 4): 16   # Catastrophic-Probable
+        }
+
+        impact_val = impact_values.get(self.business_disruption_impact_rating, 1)
+        likelihood_val = likelihood_values.get(self.business_disruption_likelihood_rating, 1)
+
+        exposure_number = matrix.get((impact_val, likelihood_val), 1)
+
+        # Map to exposure categories
+        if exposure_number <= 4:
+            category = "Low"
+        elif exposure_number <= 8:
+            category = "Medium"
+        elif exposure_number <= 12:
+            category = "High"
+        else:
+            category = "Critical"
+
+        self.business_disruption_net_exposure = f"{category} ({exposure_number})"
 
 
 class RiskLogEntry(Base):
@@ -107,13 +152,13 @@ class RiskLogEntry(Base):
     )  # e.g., "Risk Assessment Update", "Mitigation Completed", "Review"
     entry_summary = Column(String(500), nullable=False)
 
-    # Risk rating changes
-    previous_risk_rating = Column(Integer)  # Previous overall risk rating
-    new_risk_rating = Column(Integer)  # New overall risk rating
-    previous_probability = Column(Integer)  # Previous probability (1-5)
-    new_probability = Column(Integer)  # New probability (1-5)
-    previous_impact = Column(Integer)  # Previous impact (1-5)
-    new_impact = Column(Integer)  # New impact (1-5)
+    # Business Disruption rating changes
+    previous_net_exposure = Column(String(30))  # Previous net exposure (e.g., "Critical (15)")
+    new_net_exposure = Column(String(30))  # New net exposure (e.g., "Critical (15)")
+    previous_impact_rating = Column(String(20))  # Previous impact rating (Low/Moderate/Major/Catastrophic)
+    new_impact_rating = Column(String(20))  # New impact rating (Low/Moderate/Major/Catastrophic)
+    previous_likelihood_rating = Column(String(20))  # Previous likelihood rating (Remote/Unlikely/Possible/Probable)
+    new_likelihood_rating = Column(String(20))  # New likelihood rating (Remote/Unlikely/Possible/Probable)
 
     # Actions and context
     mitigation_actions_taken = Column(
@@ -146,15 +191,17 @@ class RiskLogEntry(Base):
     risk = relationship("Risk", back_populates="log_entries")
 
     def update_parent_risk_rating(self) -> None:
-        """Update the parent Risk's current rating when this log entry is approved."""
-        if self.entry_status == "Approved" and self.new_risk_rating is not None:
-            # Update the risk's current rating fields
-            if self.new_probability is not None:
-                self.risk.current_probability = self.new_probability
-            if self.new_impact is not None:
-                self.risk.current_impact = self.new_impact
-            if self.new_risk_rating is not None:
-                self.risk.current_risk_rating = self.new_risk_rating
+        """Update the parent Risk's business disruption assessment when this log entry is approved."""
+        if self.entry_status == "Approved":
+            # Update the risk's business disruption rating fields
+            if self.new_impact_rating is not None:
+                self.risk.business_disruption_impact_rating = self.new_impact_rating
+            if self.new_likelihood_rating is not None:
+                self.risk.business_disruption_likelihood_rating = self.new_likelihood_rating
+
+            # Recalculate net exposure if either rating changed
+            if self.new_impact_rating is not None or self.new_likelihood_rating is not None:
+                self.risk.calculate_net_exposure()
 
             # Update the last reviewed date to the entry date
             self.risk.last_reviewed = self.entry_date

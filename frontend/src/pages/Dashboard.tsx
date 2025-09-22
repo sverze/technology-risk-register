@@ -78,19 +78,34 @@ export const Dashboard: React.FC = () => {
   };
 
 
-  const getDomainRiskColor = (avgRating: number) => {
-    if (avgRating >= 16) return 'error';
-    if (avgRating >= 12) return 'warning';
-    if (avgRating >= 6) return 'info';
+  const getNetExposureColor = (exposure: string | number) => {
+    const exposureStr = typeof exposure === 'string' ? exposure : exposure.toString();
+    if (exposureStr.includes('Critical') || (typeof exposure === 'number' && exposure >= 15)) return 'error';
+    if (exposureStr.includes('High') || (typeof exposure === 'number' && exposure >= 8)) return 'warning';
+    if (exposureStr.includes('Medium') || (typeof exposure === 'number' && exposure >= 4)) return 'info';
     return 'success';
   };
 
-  // Prepare chart data
+  const parseExposureLevel = (exposure: string | number) => {
+    if (typeof exposure === 'string') {
+      if (exposure.includes('Critical')) return 'Critical';
+      if (exposure.includes('High')) return 'High';
+      if (exposure.includes('Medium')) return 'Medium';
+      return 'Low';
+    }
+    // For numeric values, map to levels
+    if (exposure >= 15) return 'Critical';
+    if (exposure >= 8) return 'High';
+    if (exposure >= 4) return 'Medium';
+    return 'Low';
+  };
+
+  // Prepare chart data for Business Disruption Net Exposure
   const severityChartData = [
-    { name: 'Critical (16-25)', count: data.risk_severity_distribution.critical, color: '#f44336' },
-    { name: 'High (12-15)', count: data.risk_severity_distribution.high, color: '#ff9800' },
-    { name: 'Medium (6-11)', count: data.risk_severity_distribution.medium, color: '#2196f3' },
-    { name: 'Low (1-5)', count: data.risk_severity_distribution.low, color: '#4caf50' },
+    { name: 'Critical (15-16)', count: data.risk_severity_distribution.critical, color: '#f44336' },
+    { name: 'High (8-12)', count: data.risk_severity_distribution.high, color: '#ff9800' },
+    { name: 'Medium (4-6)', count: data.risk_severity_distribution.medium, color: '#2196f3' },
+    { name: 'Low (1-3)', count: data.risk_severity_distribution.low, color: '#4caf50' },
   ];
 
   const responseStrategyData = [
@@ -288,7 +303,7 @@ export const Dashboard: React.FC = () => {
                     <TableRow>
                       <TableCell>Domain</TableCell>
                       <TableCell align="right">Risk Count</TableCell>
-                      <TableCell align="right">Avg Risk Rating</TableCell>
+                      <TableCell align="right">Avg Net Exposure</TableCell>
                       <TableCell align="right">Risk Level</TableCell>
                     </TableRow>
                   </TableHead>
@@ -303,12 +318,8 @@ export const Dashboard: React.FC = () => {
                         <TableCell align="right">
                           <Chip
                             size="small"
-                            color={getDomainRiskColor(domain.average_risk_rating)}
-                            label={
-                              domain.average_risk_rating >= 16 ? 'Critical' :
-                              domain.average_risk_rating >= 12 ? 'High' :
-                              domain.average_risk_rating >= 6 ? 'Medium' : 'Low'
-                            }
+                            color={getNetExposureColor(domain.average_risk_rating)}
+                            label={parseExposureLevel(domain.average_risk_rating)}
                           />
                         </TableCell>
                       </TableRow>
@@ -396,7 +407,7 @@ export const Dashboard: React.FC = () => {
                     <TableRow>
                       <TableCell>Risk ID</TableCell>
                       <TableCell>Title</TableCell>
-                      <TableCell align="right">Rating</TableCell>
+                      <TableCell align="right">Net Exposure</TableCell>
                       <TableCell align="right">Financial Impact</TableCell>
                       <TableCell>IBS</TableCell>
                       <TableCell>Owner</TableCell>
@@ -412,15 +423,15 @@ export const Dashboard: React.FC = () => {
                         <TableCell align="right">
                           <Chip
                             size="small"
-                            color={risk.current_risk_rating >= 16 ? 'error' : risk.current_risk_rating >= 12 ? 'warning' : 'info'}
-                            label={risk.current_risk_rating}
+                            color={getNetExposureColor(risk.business_disruption_net_exposure)}
+                            label={parseExposureLevel(risk.business_disruption_net_exposure)}
                           />
                         </TableCell>
                         <TableCell align="right">
                           {risk.financial_impact_high ? formatCurrency(Number(risk.financial_impact_high)) : '-'}
                         </TableCell>
                         <TableCell>
-                          {risk.ibs_impact ? <Warning color="warning" /> : ''}
+                          {risk.ibs_affected ? <Warning color="warning" /> : ''}
                         </TableCell>
                         <TableCell>{risk.risk_owner}</TableCell>
                       </TableRow>

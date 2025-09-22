@@ -47,8 +47,8 @@ class RiskService:
                 else:
                     query = query.order_by(sort_column.asc())
         else:
-            # Default sorting by current risk rating (highest first), then by risk_id
-            query = query.order_by(Risk.current_risk_rating.desc(), Risk.risk_id)
+            # Default sorting by net exposure (Critical first), then by risk_id
+            query = query.order_by(Risk.business_disruption_net_exposure.desc(), Risk.risk_id)
 
         return query.offset(skip).limit(limit).all()
 
@@ -81,12 +81,13 @@ class RiskService:
 
     def create_risk(self, risk_data: RiskCreate) -> Risk:
         """Create a new risk."""
-        # Generate risk ID
-        risk_id = self._generate_risk_id(risk_data.risk_category)
+        # Use provided risk_id or generate one if not provided
+        risk_id = risk_data.risk_id or self._generate_risk_id()
 
-        # Create risk with calculated ratings
-        db_risk = Risk(risk_id=risk_id, **risk_data.dict())
-        db_risk.calculate_risk_ratings()
+        # Create risk with calculated net exposure
+        risk_dict = risk_data.dict(exclude={'risk_id'})
+        db_risk = Risk(risk_id=risk_id, **risk_dict)
+        db_risk.calculate_net_exposure()
 
         self.db.add(db_risk)
         self.db.commit()
@@ -98,9 +99,9 @@ class RiskService:
             entry_type="Risk Creation",
             entry_summary="Risk initially created in the system",
             created_by=risk_data.risk_owner,
-            new_risk_rating=db_risk.current_risk_rating,
-            new_probability=db_risk.current_probability,
-            new_impact=db_risk.current_impact,
+            new_net_exposure=db_risk.business_disruption_net_exposure,
+            new_impact_rating=db_risk.business_disruption_impact_rating,
+            new_likelihood_rating=db_risk.business_disruption_likelihood_rating,
             risk_owner_at_time=risk_data.risk_owner,
         )
         self.db.commit()
@@ -113,34 +114,32 @@ class RiskService:
         if not db_risk:
             return None
 
-        # Store previous rating for audit
-        previous_rating = db_risk.current_risk_rating
-        previous_level = self._get_risk_level(previous_rating)
+        # Store previous net exposure for audit
+        previous_exposure = db_risk.business_disruption_net_exposure
 
         # Update risk fields
         for field, value in risk_data.dict(exclude_unset=True).items():
             setattr(db_risk, field, value)
 
-        # Recalculate risk ratings
-        db_risk.calculate_risk_ratings()
+        # Recalculate net exposure
+        db_risk.calculate_net_exposure()
         db_risk.updated_at = datetime.utcnow()
 
-        # Create log entry if rating changed
-        if db_risk.current_risk_rating != previous_rating:
-            new_level = self._get_risk_level(db_risk.current_risk_rating)
+        # Create log entry if net exposure changed
+        if db_risk.business_disruption_net_exposure != previous_exposure:
             self._create_log_entry(
                 risk_id=risk_id,
                 entry_type="Risk Assessment Update",
                 entry_summary=(
-                    f"Risk rating changed from {previous_level} to {new_level} via direct risk update"
+                    f"Net exposure changed from {previous_exposure} to {db_risk.business_disruption_net_exposure} via direct risk update"
                 ),
                 created_by=risk_data.risk_owner,
-                previous_risk_rating=previous_rating,
-                new_risk_rating=db_risk.current_risk_rating,
-                previous_probability=db_risk.current_probability,  # Note: we don't track previous values in direct updates
-                new_probability=db_risk.current_probability,
-                previous_impact=db_risk.current_impact,
-                new_impact=db_risk.current_impact,
+                previous_net_exposure=previous_exposure,
+                new_net_exposure=db_risk.business_disruption_net_exposure,
+                previous_impact_rating=db_risk.business_disruption_impact_rating,  # Note: we don't track previous values in direct updates
+                new_impact_rating=db_risk.business_disruption_impact_rating,
+                previous_likelihood_rating=db_risk.business_disruption_likelihood_rating,
+                new_likelihood_rating=db_risk.business_disruption_likelihood_rating,
                 risk_owner_at_time=risk_data.risk_owner,
                 entry_status="Approved",  # Direct risk updates are auto-approved
             )
@@ -159,23 +158,20 @@ class RiskService:
         self.db.commit()
         return True
 
-    def _generate_risk_id(self, category: str) -> str:
-        """Generate a unique risk ID."""
-        # Get category abbreviation
-        category_abbr = self._get_category_abbreviation(category)
-
+    def _generate_risk_id(self) -> str:
+        """Generate a unique risk ID in format TR-YYYY-###."""
         # Get current year
         year = datetime.now().year
 
-        # Find next sequence number for this year and category
-        like_pattern = f"TR-{year}-{category_abbr}-%"
+        # Find next sequence number for this year
+        like_pattern = f"TR-{year}-%"
         existing_count = (
             self.db.query(Risk).filter(Risk.risk_id.like(like_pattern)).count()
         )
 
         sequence = existing_count + 1
 
-        return f"TR-{year}-{category_abbr}-{sequence:03d}"
+        return f"TR-{year}-{sequence:03d}"
 
     def _get_category_abbreviation(self, category: str) -> str:
         """Get 3-letter abbreviation for risk category."""
@@ -210,12 +206,12 @@ class RiskService:
         entry_type: str,
         entry_summary: str,
         created_by: str,
-        previous_risk_rating: int | None = None,
-        new_risk_rating: int | None = None,
-        previous_probability: int | None = None,
-        new_probability: int | None = None,
-        previous_impact: int | None = None,
-        new_impact: int | None = None,
+        previous_net_exposure: str | None = None,
+        new_net_exposure: str | None = None,
+        previous_impact_rating: str | None = None,
+        new_impact_rating: str | None = None,
+        previous_likelihood_rating: str | None = None,
+        new_likelihood_rating: str | None = None,
         risk_owner_at_time: str | None = None,
         entry_status: str = "Draft",
         business_justification: str | None = None,
@@ -235,12 +231,12 @@ class RiskService:
             entry_date=date.today(),
             entry_type=entry_type,
             entry_summary=entry_summary,
-            previous_risk_rating=previous_risk_rating,
-            new_risk_rating=new_risk_rating,
-            previous_probability=previous_probability,
-            new_probability=new_probability,
-            previous_impact=previous_impact,
-            new_impact=new_impact,
+            previous_net_exposure=previous_net_exposure,
+            new_net_exposure=new_net_exposure,
+            previous_impact_rating=previous_impact_rating,
+            new_impact_rating=new_impact_rating,
+            previous_likelihood_rating=previous_likelihood_rating,
+            new_likelihood_rating=new_likelihood_rating,
             mitigation_actions_taken=mitigation_actions_taken,
             risk_owner_at_time=risk_owner_at_time,
             supporting_evidence=supporting_evidence,
@@ -281,12 +277,12 @@ class RiskService:
         current_risk = self.get_risk(log_entry_data.risk_id)
         if current_risk:
             # Auto-populate previous values if not provided
-            if log_entry_data.previous_risk_rating is None:
-                log_entry_data.previous_risk_rating = current_risk.current_risk_rating
-            if log_entry_data.previous_probability is None:
-                log_entry_data.previous_probability = current_risk.current_probability
-            if log_entry_data.previous_impact is None:
-                log_entry_data.previous_impact = current_risk.current_impact
+            if log_entry_data.previous_net_exposure is None:
+                log_entry_data.previous_net_exposure = current_risk.business_disruption_net_exposure
+            if log_entry_data.previous_impact_rating is None:
+                log_entry_data.previous_impact_rating = current_risk.business_disruption_impact_rating
+            if log_entry_data.previous_likelihood_rating is None:
+                log_entry_data.previous_likelihood_rating = current_risk.business_disruption_likelihood_rating
             if log_entry_data.risk_owner_at_time is None:
                 log_entry_data.risk_owner_at_time = current_risk.risk_owner
 

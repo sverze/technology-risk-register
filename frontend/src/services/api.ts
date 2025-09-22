@@ -61,7 +61,7 @@ export const riskApi = {
   },
 
   // Create new risk
-  createRisk: async (risk: Omit<Risk, 'risk_id' | 'created_at' | 'updated_at' | 'inherent_risk_rating' | 'current_risk_rating'>): Promise<Risk> => {
+  createRisk: async (risk: Omit<Risk, 'risk_id' | 'created_at' | 'updated_at' | 'business_disruption_net_exposure'>): Promise<Risk> => {
     return apiRequest<Risk>('/risks/', {
       method: 'POST',
       body: JSON.stringify(risk),
@@ -154,7 +154,24 @@ export const dashboardApi = {
 export const dropdownApi = {
   // Get all dropdown values grouped by category
   getDropdownValues: async (): Promise<DropdownValues> => {
-    const response = await apiRequest<Record<string, Array<{id: number, category: string, value: string, display_order: number, is_active: boolean}>>>('/dropdown/values/by-category');
+    // Get all dropdown values and group them by category
+    const response = await apiRequest<Array<{id: number, category: string, value: string, display_order: number, is_active: boolean}>>('/dropdown/values');
+
+    // Group by category
+    const groupedResponse: Record<string, Array<{id: number, category: string, value: string, display_order: number, is_active: boolean}>> = {};
+    response.forEach(item => {
+      if (!groupedResponse[item.category]) {
+        groupedResponse[item.category] = [];
+      }
+      if (item.is_active) {
+        groupedResponse[item.category].push(item);
+      }
+    });
+
+    // Sort each category by display_order
+    Object.keys(groupedResponse).forEach(category => {
+      groupedResponse[category].sort((a, b) => a.display_order - b.display_order);
+    });
 
     // Transform the response to match our frontend DropdownValues interface
     const dropdownValues: DropdownValues = {
@@ -162,21 +179,28 @@ export const dropdownApi = {
       risk_response_strategies: [],
       departments: [],
       statuses: [],
-      impact_on_ibs: ['Critical', 'High', 'Medium', 'Low', 'None'], // Default values
-      controls_preventative: [],
-      controls_detective: [],
-      controls_corrective: [],
+      technology_domains: [],
+
+      // New Business Disruption dropdowns
+      business_disruption_impact_ratings: [],
+      business_disruption_likelihood_ratings: [],
+
+      // Updated control dropdowns
+      controls_coverage: [],
+      controls_effectiveness: [],
     };
 
     // Extract values from each category
-    Object.entries(response).forEach(([category, values]) => {
+    Object.entries(groupedResponse).forEach(([category, values]) => {
       const valueStrings = values.map(v => v.value);
 
       switch (category) {
         case 'risk_category':
-        case 'technology_domain':
         case 'category':
           dropdownValues.categories = valueStrings;
+          break;
+        case 'technology_domain':
+          dropdownValues.technology_domains = valueStrings;
           break;
         case 'risk_response_strategy':
           dropdownValues.risk_response_strategies = valueStrings;
@@ -189,24 +213,17 @@ export const dropdownApi = {
         case 'status':
           dropdownValues.statuses = valueStrings;
           break;
-        case 'impact_business_service':
-        case 'impact_on_ibs':
-          dropdownValues.impact_on_ibs = valueStrings;
+        case 'business_disruption_impact_rating':
+          dropdownValues.business_disruption_impact_ratings = valueStrings;
           break;
-        case 'control_status':
-          // Use the same control status values for all three control types
-          dropdownValues.controls_preventative = valueStrings;
-          dropdownValues.controls_detective = valueStrings;
-          dropdownValues.controls_corrective = valueStrings;
+        case 'business_disruption_likelihood_rating':
+          dropdownValues.business_disruption_likelihood_ratings = valueStrings;
           break;
-        case 'controls_preventative':
-          dropdownValues.controls_preventative = valueStrings;
+        case 'controls_coverage':
+          dropdownValues.controls_coverage = valueStrings;
           break;
-        case 'controls_detective':
-          dropdownValues.controls_detective = valueStrings;
-          break;
-        case 'controls_corrective':
-          dropdownValues.controls_corrective = valueStrings;
+        case 'controls_effectiveness':
+          dropdownValues.controls_effectiveness = valueStrings;
           break;
       }
     });

@@ -26,9 +26,9 @@ class ControlPosture(BaseModel):
 class TopRisk(BaseModel):
     risk_id: str
     risk_title: str
-    current_risk_rating: int
+    business_disruption_net_exposure: str
     financial_impact_high: Decimal | None
-    ibs_impact: bool
+    ibs_affected: str | None
     risk_owner: str
 
 

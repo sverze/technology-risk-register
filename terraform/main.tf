@@ -27,8 +27,9 @@ resource "google_artifact_registry_repository" "container_repo" {
 resource "google_storage_bucket" "database_bucket" {
   name     = "${var.project_id}-${var.app_name}-database"
   location = var.region
-  
+
   uniform_bucket_level_access = true
+  force_destroy = true  # Allow deletion even with objects
   
   versioning {
     enabled = true
@@ -53,6 +54,7 @@ resource "google_storage_bucket" "assets_bucket" {
   location = var.region
 
   uniform_bucket_level_access = true
+  force_destroy = true  # Allow deletion even with objects
 
   # Enable website hosting
   website {

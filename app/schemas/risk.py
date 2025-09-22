@@ -5,49 +5,54 @@ from pydantic import BaseModel, Field
 
 
 class RiskBase(BaseModel):
+    # Core Risk Identification Fields
     risk_title: str = Field(..., max_length=100)
     risk_category: str = Field(..., max_length=50)
-    risk_description: str = Field(..., max_length=400)
+    risk_description: str = Field(..., max_length=1000)  # Increased to accommodate realistic risk descriptions
 
-    inherent_probability: int = Field(..., ge=1, le=5)
-    inherent_impact: int = Field(..., ge=1, le=5)
-    current_probability: int = Field(..., ge=1, le=5)
-    current_impact: int = Field(..., ge=1, le=5)
-
+    # Risk Management Fields
     risk_status: str = Field(..., max_length=20)
     risk_response_strategy: str = Field(..., max_length=20)
-    planned_mitigations: str | None = Field(None, max_length=200)
+    planned_mitigations: str | None = Field(None, max_length=500)
 
-    preventative_controls_status: str = Field(..., max_length=20)
-    preventative_controls_description: str | None = Field(None, max_length=150)
-    detective_controls_status: str = Field(..., max_length=20)
-    detective_controls_description: str | None = Field(None, max_length=150)
-    corrective_controls_status: str = Field(..., max_length=20)
-    corrective_controls_description: str | None = Field(None, max_length=150)
-    control_gaps: str | None = Field(None, max_length=150)
+    # Control Management Fields - Updated naming and increased description length
+    preventative_controls_coverage: str = Field(..., max_length=30)
+    preventative_controls_effectiveness: str = Field(..., max_length=30)
+    preventative_controls_description: str | None = Field(None, max_length=500)  # Increased from 150
+    detective_controls_coverage: str = Field(..., max_length=30)
+    detective_controls_effectiveness: str = Field(..., max_length=30)
+    detective_controls_description: str | None = Field(None, max_length=500)  # Increased from 150
+    corrective_controls_coverage: str = Field(..., max_length=30)
+    corrective_controls_effectiveness: str = Field(..., max_length=30)
+    corrective_controls_description: str | None = Field(None, max_length=500)  # Increased from 150
 
+    # Ownership & Systems Fields
     risk_owner: str = Field(..., max_length=50)
     risk_owner_department: str = Field(..., max_length=50)
     systems_affected: str | None = Field(None, max_length=150)
     technology_domain: str = Field(..., max_length=50)
 
-    ibs_impact: bool
-    number_of_ibs_affected: int | None = Field(None, ge=0)
-    business_criticality: str = Field(..., max_length=20)
+    # Business Disruption Assessment Fields - New model
+    ibs_affected: str | None = Field(None, max_length=200)  # Replaced boolean ibs_impact
+    business_disruption_impact_rating: str = Field(..., max_length=20)  # Low/Moderate/Major/Catastrophic
+    business_disruption_impact_description: str = Field(..., max_length=800)
+    business_disruption_likelihood_rating: str = Field(..., max_length=20)  # Remote/Unlikely/Possible/Probable
+    business_disruption_likelihood_description: str = Field(..., max_length=800)
+    # business_disruption_net_exposure is auto-calculated, not in input schemas
+
+    # Financial Impact Fields
     financial_impact_low: Decimal | None = Field(None, ge=0)
     financial_impact_high: Decimal | None = Field(None, ge=0)
-    rto_hours: int | None = Field(None, ge=0)
-    rpo_hours: int | None = Field(None, ge=0)
-    sla_impact: str | None = Field(None, max_length=100)
-    slo_impact: str | None = Field(None, max_length=100)
+    financial_impact_notes: str | None = Field(None, max_length=200)  # New field
 
+    # Review & Timeline Fields
     date_identified: date
     last_reviewed: date
     next_review_date: date
 
 
 class RiskCreate(RiskBase):
-    pass
+    risk_id: str | None = Field(None, max_length=20)
 
 
 class RiskUpdate(RiskBase):
@@ -56,10 +61,14 @@ class RiskUpdate(RiskBase):
 
 class Risk(RiskBase):
     risk_id: str
-    inherent_risk_rating: int
-    current_risk_rating: int
+    business_disruption_net_exposure: str  # Auto-calculated field
     created_at: datetime
     updated_at: datetime
+
+    # Override field limits for response to accommodate realistic data
+    risk_description: str = Field(..., max_length=1000)
+    business_disruption_impact_description: str = Field(..., max_length=800)
+    business_disruption_likelihood_description: str = Field(..., max_length=800)
 
     class Config:
         from_attributes = True
@@ -71,13 +80,13 @@ class RiskLogEntryBase(BaseModel):
     entry_type: str = Field(..., max_length=50)
     entry_summary: str = Field(..., max_length=500)
 
-    # Risk rating changes
-    previous_risk_rating: int | None = Field(None, ge=1, le=25)
-    new_risk_rating: int | None = Field(None, ge=1, le=25)
-    previous_probability: int | None = Field(None, ge=1, le=5)
-    new_probability: int | None = Field(None, ge=1, le=5)
-    previous_impact: int | None = Field(None, ge=1, le=5)
-    new_impact: int | None = Field(None, ge=1, le=5)
+    # Business Disruption rating changes
+    previous_net_exposure: str | None = Field(None, max_length=30)
+    new_net_exposure: str | None = Field(None, max_length=30)
+    previous_impact_rating: str | None = Field(None, max_length=20)
+    new_impact_rating: str | None = Field(None, max_length=20)
+    previous_likelihood_rating: str | None = Field(None, max_length=20)
+    new_likelihood_rating: str | None = Field(None, max_length=20)
 
     # Actions and context
     mitigation_actions_taken: str | None = Field(None, max_length=300)
@@ -105,13 +114,13 @@ class RiskLogEntryUpdate(BaseModel):
     entry_type: str | None = Field(None, max_length=50)
     entry_summary: str | None = Field(None, max_length=500)
 
-    # Risk rating changes
-    previous_risk_rating: int | None = Field(None, ge=1, le=25)
-    new_risk_rating: int | None = Field(None, ge=1, le=25)
-    previous_probability: int | None = Field(None, ge=1, le=5)
-    new_probability: int | None = Field(None, ge=1, le=5)
-    previous_impact: int | None = Field(None, ge=1, le=5)
-    new_impact: int | None = Field(None, ge=1, le=5)
+    # Business Disruption rating changes
+    previous_net_exposure: str | None = Field(None, max_length=30)
+    new_net_exposure: str | None = Field(None, max_length=30)
+    previous_impact_rating: str | None = Field(None, max_length=20)
+    new_impact_rating: str | None = Field(None, max_length=20)
+    previous_likelihood_rating: str | None = Field(None, max_length=20)
+    new_likelihood_rating: str | None = Field(None, max_length=20)
 
     # Actions and context
     mitigation_actions_taken: str | None = Field(None, max_length=300)

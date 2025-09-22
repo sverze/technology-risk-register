@@ -9,33 +9,40 @@ export interface RiskFormData {
   risk_title: string;
   risk_description: string;
   risk_category: string;
-  inherent_probability: number;
-  inherent_impact: number;
-  current_probability: number;
-  current_impact: number;
   risk_status: string;
   risk_response_strategy: string;
   planned_mitigations: string;
-  preventative_controls_status: string;
+
+  // Control Management Fields - Updated naming
+  preventative_controls_coverage: string;
+  preventative_controls_effectiveness: string;
   preventative_controls_description: string;
-  detective_controls_status: string;
+  detective_controls_coverage: string;
+  detective_controls_effectiveness: string;
   detective_controls_description: string;
-  corrective_controls_status: string;
+  corrective_controls_coverage: string;
+  corrective_controls_effectiveness: string;
   corrective_controls_description: string;
-  control_gaps: string;
+
+  // Ownership & Systems Fields
   risk_owner: string;
   risk_owner_department: string;
   systems_affected: string;
   technology_domain: string;
-  ibs_impact: boolean;
-  number_of_ibs_affected: string;
-  business_criticality: string;
+
+  // Business Disruption Assessment Fields - New model
+  ibs_affected: string;
+  business_disruption_impact_rating: string;
+  business_disruption_impact_description: string;
+  business_disruption_likelihood_rating: string;
+  business_disruption_likelihood_description: string;
+
+  // Financial Impact Fields
   financial_impact_low: string;
   financial_impact_high: string;
-  rto_hours: string;
-  rpo_hours: string;
-  sla_impact: string;
-  slo_impact: string;
+  financial_impact_notes: string;
+
+  // Review & Timeline Fields
   date_identified: string;
   last_reviewed: string;
   next_review_date: string;
@@ -44,19 +51,20 @@ export interface RiskFormData {
 // Field length constraints based on backend model
 const FIELD_CONSTRAINTS = {
   risk_title: { min: 1, max: 100 },
-  risk_description: { min: 10, max: 400 },
+  risk_description: { min: 10, max: 500 },
   risk_category: { min: 1, max: 50 },
   planned_mitigations: { max: 200 },
-  preventative_controls_description: { max: 150 },
-  detective_controls_description: { max: 150 },
-  corrective_controls_description: { max: 150 },
-  control_gaps: { max: 150 },
+  preventative_controls_description: { max: 500 },
+  detective_controls_description: { max: 500 },
+  corrective_controls_description: { max: 500 },
   risk_owner: { min: 1, max: 50 },
   risk_owner_department: { min: 1, max: 50 },
   systems_affected: { max: 150 },
   technology_domain: { min: 1, max: 50 },
-  sla_impact: { max: 100 },
-  slo_impact: { max: 100 },
+  business_disruption_impact_description: { min: 10, max: 400 },
+  business_disruption_likelihood_description: { min: 10, max: 400 },
+  financial_impact_notes: { max: 200 },
+  ibs_affected: { max: 200 },
 };
 
 export const validateRiskForm = (formData: RiskFormData): ValidationResult => {
@@ -95,8 +103,28 @@ export const validateRiskForm = (formData: RiskFormData): ValidationResult => {
     errors.risk_owner_department = 'Risk owner department is required';
   }
 
-  if (!formData.business_criticality.trim()) {
-    errors.business_criticality = 'Business criticality is required';
+  if (!formData.business_disruption_impact_rating.trim()) {
+    errors.business_disruption_impact_rating = 'Business Disruption Impact Rating is required';
+  }
+
+  if (!formData.business_disruption_likelihood_rating.trim()) {
+    errors.business_disruption_likelihood_rating = 'Business Disruption Likelihood Rating is required';
+  }
+
+  if (!formData.business_disruption_impact_description.trim()) {
+    errors.business_disruption_impact_description = 'Business Disruption Impact Description is required';
+  } else if (formData.business_disruption_impact_description.length < FIELD_CONSTRAINTS.business_disruption_impact_description.min) {
+    errors.business_disruption_impact_description = `Impact description must be at least ${FIELD_CONSTRAINTS.business_disruption_impact_description.min} characters`;
+  } else if (formData.business_disruption_impact_description.length > FIELD_CONSTRAINTS.business_disruption_impact_description.max) {
+    errors.business_disruption_impact_description = `Impact description must not exceed ${FIELD_CONSTRAINTS.business_disruption_impact_description.max} characters`;
+  }
+
+  if (!formData.business_disruption_likelihood_description.trim()) {
+    errors.business_disruption_likelihood_description = 'Business Disruption Likelihood Description is required';
+  } else if (formData.business_disruption_likelihood_description.length < FIELD_CONSTRAINTS.business_disruption_likelihood_description.min) {
+    errors.business_disruption_likelihood_description = `Likelihood description must be at least ${FIELD_CONSTRAINTS.business_disruption_likelihood_description.min} characters`;
+  } else if (formData.business_disruption_likelihood_description.length > FIELD_CONSTRAINTS.business_disruption_likelihood_description.max) {
+    errors.business_disruption_likelihood_description = `Likelihood description must not exceed ${FIELD_CONSTRAINTS.business_disruption_likelihood_description.max} characters`;
   }
 
   if (!formData.date_identified) {
@@ -107,21 +135,29 @@ export const validateRiskForm = (formData: RiskFormData): ValidationResult => {
     errors.last_reviewed = 'Last reviewed date is required';
   }
 
-  // Probability and impact validation (1-5)
-  if (formData.inherent_probability < 1 || formData.inherent_probability > 5) {
-    errors.inherent_probability = 'Inherent probability must be between 1 and 5';
+  // Control coverage and effectiveness validation
+  if (!formData.preventative_controls_coverage.trim()) {
+    errors.preventative_controls_coverage = 'Preventative controls coverage is required';
   }
 
-  if (formData.inherent_impact < 1 || formData.inherent_impact > 5) {
-    errors.inherent_impact = 'Inherent impact must be between 1 and 5';
+  if (!formData.preventative_controls_effectiveness.trim()) {
+    errors.preventative_controls_effectiveness = 'Preventative controls effectiveness is required';
   }
 
-  if (formData.current_probability < 1 || formData.current_probability > 5) {
-    errors.current_probability = 'Current probability must be between 1 and 5';
+  if (!formData.detective_controls_coverage.trim()) {
+    errors.detective_controls_coverage = 'Detective controls coverage is required';
   }
 
-  if (formData.current_impact < 1 || formData.current_impact > 5) {
-    errors.current_impact = 'Current impact must be between 1 and 5';
+  if (!formData.detective_controls_effectiveness.trim()) {
+    errors.detective_controls_effectiveness = 'Detective controls effectiveness is required';
+  }
+
+  if (!formData.corrective_controls_coverage.trim()) {
+    errors.corrective_controls_coverage = 'Corrective controls coverage is required';
+  }
+
+  if (!formData.corrective_controls_effectiveness.trim()) {
+    errors.corrective_controls_effectiveness = 'Corrective controls effectiveness is required';
   }
 
   // Date validation
@@ -165,18 +201,10 @@ export const validateRiskForm = (formData: RiskFormData): ValidationResult => {
     }
   }
 
-  if (formData.rto_hours && (isNaN(Number(formData.rto_hours)) || Number(formData.rto_hours) < 0)) {
-    errors.rto_hours = 'RTO hours must be a valid positive number';
-  }
+  // RTO/RPO fields removed from Business Disruption model
 
-  if (formData.rpo_hours && (isNaN(Number(formData.rpo_hours)) || Number(formData.rpo_hours) < 0)) {
-    errors.rpo_hours = 'RPO hours must be a valid positive number';
-  }
-
-  // IBS validation
-  if (formData.ibs_impact && (!formData.number_of_ibs_affected || isNaN(Number(formData.number_of_ibs_affected)))) {
-    errors.number_of_ibs_affected = 'Number of IBS affected is required when IBS impact is selected';
-  }
+  // IBS validation - now a text field
+  // No specific validation needed for ibs_affected as it's optional text
 
   // Length constraints for optional fields
   Object.entries(FIELD_CONSTRAINTS).forEach(([field, constraint]) => {

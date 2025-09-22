@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # CORS - can be JSON string, list, or "*" for all origins
     ALLOWED_ORIGINS: Union[str, List[str]] = os.getenv(
         "ALLOWED_ORIGINS",
-        '["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8008", "http://127.0.0.1:8008", "http://frontend:3000"]'
+        '["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8080", "http://127.0.0.1:8080", "http://frontend:3000"]'
     )
 
     @field_validator('ALLOWED_ORIGINS')

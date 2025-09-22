@@ -7,13 +7,13 @@ export interface RiskLogEntry {
   entry_type: string;
   entry_summary: string;
 
-  // Risk rating changes
-  previous_risk_rating?: number;
-  new_risk_rating?: number;
-  previous_probability?: number;
-  new_probability?: number;
-  previous_impact?: number;
-  new_impact?: number;
+  // Risk rating changes - Business Disruption model
+  previous_net_exposure?: string;
+  new_net_exposure?: string;
+  previous_impact_rating?: string;
+  new_impact_rating?: string;
+  previous_likelihood_rating?: string;
+  new_likelihood_rating?: string;
 
   // Actions and context
   mitigation_actions_taken?: string;
@@ -43,13 +43,13 @@ export interface RiskLogEntryCreate {
   entry_type: string;
   entry_summary: string;
 
-  // Risk rating changes
-  previous_risk_rating?: number;
-  new_risk_rating?: number;
-  previous_probability?: number;
-  new_probability?: number;
-  previous_impact?: number;
-  new_impact?: number;
+  // Risk rating changes - Business Disruption model
+  previous_net_exposure?: string;
+  new_net_exposure?: string;
+  previous_impact_rating?: string;
+  new_impact_rating?: string;
+  previous_likelihood_rating?: string;
+  new_likelihood_rating?: string;
 
   // Actions and context
   mitigation_actions_taken?: string;
@@ -73,13 +73,13 @@ export interface RiskLogEntryUpdate {
   entry_type?: string;
   entry_summary?: string;
 
-  // Risk rating changes
-  previous_risk_rating?: number;
-  new_risk_rating?: number;
-  previous_probability?: number;
-  new_probability?: number;
-  previous_impact?: number;
-  new_impact?: number;
+  // Risk rating changes - Business Disruption model
+  previous_net_exposure?: string;
+  new_net_exposure?: string;
+  previous_impact_rating?: string;
+  new_impact_rating?: string;
+  previous_likelihood_rating?: string;
+  new_likelihood_rating?: string;
 
   // Actions and context
   mitigation_actions_taken?: string;

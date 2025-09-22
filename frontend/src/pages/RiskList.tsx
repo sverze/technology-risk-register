@@ -32,18 +32,20 @@ import { useRisks } from '@/hooks/useRisks';
 import { useDropdownValues } from '@/hooks/useDropdownValues';
 import * as XLSX from 'xlsx';
 
-const getSeverityColor = (rating: number): 'error' | 'warning' | 'info' | 'success' => {
-  if (rating >= 20) return 'error';
-  if (rating >= 15) return 'warning';
-  if (rating >= 10) return 'info';
+const getNetExposureColor = (exposure: string): 'error' | 'warning' | 'info' | 'success' => {
+  if (exposure.includes('Critical')) return 'error';
+  if (exposure.includes('High')) return 'warning';
+  if (exposure.includes('Medium')) return 'info';
   return 'success';
 };
 
-const getSeverityLabel = (rating: number): string => {
-  if (rating >= 20) return 'Critical';
-  if (rating >= 15) return 'High';
-  if (rating >= 10) return 'Medium';
-  return 'Low';
+const parseNetExposure = (exposure: string) => {
+  // Extract level and score from "Critical (15)" format
+  const match = exposure.match(/^(\w+)\s*\((\d+)\)$/);
+  if (match) {
+    return { level: match[1], score: parseInt(match[2]) };
+  }
+  return { level: exposure, score: null };
 };
 
 export const RiskList: React.FC = () => {
@@ -55,7 +57,7 @@ export const RiskList: React.FC = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
-  const [sortBy, setSortBy] = useState('current_risk_rating');
+  const [sortBy, setSortBy] = useState('business_disruption_net_exposure');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   // Column widths state for resizing
@@ -91,7 +93,7 @@ export const RiskList: React.FC = () => {
     setSearch('');
     setCategory('');
     setStatus('');
-    setSortBy('current_risk_rating');
+    setSortBy('business_disruption_net_exposure');
     setSortOrder('desc');
   };
 
@@ -116,34 +118,30 @@ export const RiskList: React.FC = () => {
       'Description': risk.risk_description,
       'Category': risk.risk_category,
       'Status': risk.risk_status,
-      'Current Risk Rating': risk.current_risk_rating,
-      'Inherent Risk Rating': risk.inherent_risk_rating,
-      'Current Probability': risk.current_probability,
-      'Current Impact': risk.current_impact,
-      'Inherent Probability': risk.inherent_probability,
-      'Inherent Impact': risk.inherent_impact,
+      'Net Exposure': risk.business_disruption_net_exposure,
+      'Impact Rating': risk.business_disruption_impact_rating,
+      'Impact Description': risk.business_disruption_impact_description,
+      'Likelihood Rating': risk.business_disruption_likelihood_rating,
+      'Likelihood Description': risk.business_disruption_likelihood_description,
       'Risk Owner': risk.risk_owner,
       'Risk Owner Department': risk.risk_owner_department,
       'Technology Domain': risk.technology_domain,
-      'Business Criticality': risk.business_criticality,
       'Risk Response Strategy': risk.risk_response_strategy,
       'Planned Mitigations': risk.planned_mitigations,
-      'Preventative Controls Status': risk.preventative_controls_status,
+      'Preventative Controls Coverage': risk.preventative_controls_coverage,
+      'Preventative Controls Effectiveness': risk.preventative_controls_effectiveness,
       'Preventative Controls Description': risk.preventative_controls_description,
-      'Detective Controls Status': risk.detective_controls_status,
+      'Detective Controls Coverage': risk.detective_controls_coverage,
+      'Detective Controls Effectiveness': risk.detective_controls_effectiveness,
       'Detective Controls Description': risk.detective_controls_description,
-      'Corrective Controls Status': risk.corrective_controls_status,
+      'Corrective Controls Coverage': risk.corrective_controls_coverage,
+      'Corrective Controls Effectiveness': risk.corrective_controls_effectiveness,
       'Corrective Controls Description': risk.corrective_controls_description,
-      'Control Gaps': risk.control_gaps,
       'Systems Affected': risk.systems_affected,
-      'IBS Impact': risk.ibs_impact ? 'Yes' : 'No',
-      'Number of IBS Affected': risk.number_of_ibs_affected,
+      'IBS Affected': risk.ibs_affected,
       'Financial Impact Low': risk.financial_impact_low,
       'Financial Impact High': risk.financial_impact_high,
-      'RTO Hours': risk.rto_hours,
-      'RPO Hours': risk.rpo_hours,
-      'SLA Impact': risk.sla_impact,
-      'SLO Impact': risk.slo_impact,
+      'Financial Impact Notes': risk.financial_impact_notes,
       'Date Identified': new Date(risk.date_identified).toLocaleDateString(),
       'Last Reviewed': new Date(risk.last_reviewed).toLocaleDateString(),
       'Next Review Date': risk.next_review_date ? new Date(risk.next_review_date).toLocaleDateString() : '',
@@ -173,12 +171,12 @@ export const RiskList: React.FC = () => {
               'Entry Date': new Date(entry.entry_date).toLocaleDateString(),
               'Entry Type': entry.entry_type,
               'Entry Summary': entry.entry_summary,
-              'Previous Risk Rating': entry.previous_risk_rating || '',
-              'New Risk Rating': entry.new_risk_rating || '',
-              'Previous Probability': entry.previous_probability || '',
-              'New Probability': entry.new_probability || '',
-              'Previous Impact': entry.previous_impact || '',
-              'New Impact': entry.new_impact || '',
+              'Previous Net Exposure': entry.previous_net_exposure || '',
+              'New Net Exposure': entry.new_net_exposure || '',
+              'Previous Impact Rating': entry.previous_impact_rating || '',
+              'New Impact Rating': entry.new_impact_rating || '',
+              'Previous Likelihood Rating': entry.previous_likelihood_rating || '',
+              'New Likelihood Rating': entry.new_likelihood_rating || '',
               'Mitigation Actions': entry.mitigation_actions_taken || '',
               'Risk Owner at Time': entry.risk_owner_at_time || '',
               'Supporting Evidence': entry.supporting_evidence || '',
@@ -219,11 +217,12 @@ export const RiskList: React.FC = () => {
       'Description': risk.risk_description,
       'Category': risk.risk_category,
       'Status': risk.risk_status,
-      'Current Risk Rating': risk.current_risk_rating,
+      'Net Exposure': risk.business_disruption_net_exposure,
+      'Impact Rating': risk.business_disruption_impact_rating,
+      'Likelihood Rating': risk.business_disruption_likelihood_rating,
       'Risk Owner': risk.risk_owner,
       'Technology Domain': risk.technology_domain,
-      'Business Criticality': risk.business_criticality,
-      'IBS Impact': risk.ibs_impact ? 'Yes' : 'No',
+      'IBS Affected': risk.ibs_affected,
       'Financial Impact High': risk.financial_impact_high,
       'Date Identified': new Date(risk.date_identified).toLocaleDateString(),
       'Last Reviewed': new Date(risk.last_reviewed).toLocaleDateString(),
@@ -391,7 +390,7 @@ export const RiskList: React.FC = () => {
               onChange={(e) => setSortBy(e.target.value)}
               size="small"
             >
-              <MenuItem value="current_risk_rating">Risk Rating</MenuItem>
+              <MenuItem value="business_disruption_net_exposure">Net Exposure</MenuItem>
               <MenuItem value="risk_title">Title</MenuItem>
               <MenuItem value="risk_category">Category</MenuItem>
               <MenuItem value="risk_status">Status</MenuItem>
@@ -427,16 +426,16 @@ export const RiskList: React.FC = () => {
         {risks.length > 0 && (
           <Box sx={{ display: 'flex', gap: 3 }}>
             <Typography variant="caption" color="text.secondary">
-              Critical: {risks.filter(r => r.current_risk_rating >= 20).length}
+              Critical: {risks.filter(r => r.business_disruption_net_exposure?.includes('Critical')).length}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              High: {risks.filter(r => r.current_risk_rating >= 15 && r.current_risk_rating < 20).length}
+              High: {risks.filter(r => r.business_disruption_net_exposure?.includes('High')).length}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Medium: {risks.filter(r => r.current_risk_rating >= 10 && r.current_risk_rating < 15).length}
+              Medium: {risks.filter(r => r.business_disruption_net_exposure?.includes('Medium')).length}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Low: {risks.filter(r => r.current_risk_rating < 10).length}
+              Low: {risks.filter(r => r.business_disruption_net_exposure?.includes('Low')).length}
             </Typography>
           </Box>
         )}
@@ -572,10 +571,10 @@ export const RiskList: React.FC = () => {
                 </TableCell>
               )}
               
-              {/* Risk Rating - Always visible */}
-              <TableCell 
-                sx={{ 
-                  width: `${columnWidths.rating}px`, 
+              {/* Net Exposure - Always visible */}
+              <TableCell
+                sx={{
+                  width: `${columnWidths.rating}px`,
                   fontWeight: 600,
                   position: 'relative',
                   borderRight: '1px solid',
@@ -584,11 +583,11 @@ export const RiskList: React.FC = () => {
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <TableSortLabel
-                    active={sortBy === 'current_risk_rating'}
-                    direction={sortBy === 'current_risk_rating' ? sortOrder : 'asc'}
-                    onClick={() => handleSort('current_risk_rating')}
+                    active={sortBy === 'business_disruption_net_exposure'}
+                    direction={sortBy === 'business_disruption_net_exposure' ? sortOrder : 'asc'}
+                    onClick={() => handleSort('business_disruption_net_exposure')}
                   >
-                    {isMobile ? 'Risk' : 'Risk Rating'}
+                    {isMobile ? 'Exposure' : 'Net Exposure'}
                   </TableSortLabel>
                   {!isMobile && (
                     <Box
@@ -776,17 +775,17 @@ export const RiskList: React.FC = () => {
                     </TableCell>
                   )}
                   
-                  {/* Risk Rating - Always visible */}
+                  {/* Net Exposure - Always visible */}
                   <TableCell sx={{ py: 2, width: `${columnWidths.rating}px` }}>
                     <Chip
-                      label={risk.current_risk_rating}
-                      color={getSeverityColor(risk.current_risk_rating)}
+                      label={parseNetExposure(risk.business_disruption_net_exposure).level}
+                      color={getNetExposureColor(risk.business_disruption_net_exposure)}
                       size="small"
                       sx={{ minWidth: 45, fontWeight: 600 }}
                     />
                     {!isMobile && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                        {getSeverityLabel(risk.current_risk_rating)}
+                        Score: {parseNetExposure(risk.business_disruption_net_exposure).score}
                       </Typography>
                     )}
                   </TableCell>

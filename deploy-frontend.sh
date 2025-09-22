@@ -159,27 +159,26 @@ cd ..
 
 # Upload to Cloud Storage bucket
 log_info "Uploading build files to bucket gs://$ASSETS_BUCKET..."
-gsutil -m rsync -r -d frontend/dist gs://$ASSETS_BUCKET/
+gsutil -o "GSUtil:parallel_process_count=1" -m rsync -r -d frontend/dist gs://$ASSETS_BUCKET/
 
-# Set proper content types and make publicly readable
-log_info "Setting file permissions and metadata..."
-gsutil -m acl ch -r -u AllUsers:R gs://$ASSETS_BUCKET/
+# Set proper content types (bucket is already publicly readable via IAM)
+log_info "Setting file metadata..."
 
 # Set metadata for specific files that exist
 if gsutil ls gs://$ASSETS_BUCKET/assets/*.css >/dev/null 2>&1; then
-    gsutil -m setmeta -h "Content-Type:text/css" -h "Cache-Control:public,max-age=31536000" gs://$ASSETS_BUCKET/assets/*.css
+    gsutil -o "GSUtil:parallel_process_count=1" -m setmeta -h "Content-Type:text/css" -h "Cache-Control:public,max-age=31536000" gs://$ASSETS_BUCKET/assets/*.css
 fi
 
 if gsutil ls gs://$ASSETS_BUCKET/assets/*.js >/dev/null 2>&1; then
-    gsutil -m setmeta -h "Content-Type:application/javascript" -h "Cache-Control:public,max-age=31536000" gs://$ASSETS_BUCKET/assets/*.js
+    gsutil -o "GSUtil:parallel_process_count=1" -m setmeta -h "Content-Type:application/javascript" -h "Cache-Control:public,max-age=31536000" gs://$ASSETS_BUCKET/assets/*.js
 fi
 
 if gsutil ls gs://$ASSETS_BUCKET/*.html >/dev/null 2>&1; then
-    gsutil -m setmeta -h "Content-Type:text/html" -h "Cache-Control:public,max-age=3600" gs://$ASSETS_BUCKET/*.html
+    gsutil -o "GSUtil:parallel_process_count=1" -m setmeta -h "Content-Type:text/html" -h "Cache-Control:public,max-age=3600" gs://$ASSETS_BUCKET/*.html
 fi
 
 if gsutil ls gs://$ASSETS_BUCKET/*.svg >/dev/null 2>&1; then
-    gsutil -m setmeta -h "Content-Type:image/svg+xml" -h "Cache-Control:public,max-age=31536000" gs://$ASSETS_BUCKET/*.svg
+    gsutil -o "GSUtil:parallel_process_count=1" -m setmeta -h "Content-Type:image/svg+xml" -h "Cache-Control:public,max-age=31536000" gs://$ASSETS_BUCKET/*.svg
 fi
 
 log_success "Frontend uploaded to Cloud Storage successfully!"

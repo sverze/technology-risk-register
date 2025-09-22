@@ -9,7 +9,6 @@ import {
   CardContent,
   CircularProgress,
   Alert,
-  Divider,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -37,19 +36,13 @@ export const ViewRisk: React.FC = () => {
     }
   };
 
-  const getRiskSeverityColor = (rating: number) => {
-    if (rating >= 20) return 'error';
-    if (rating >= 15) return 'warning';
-    if (rating >= 10) return 'info';
+  const getNetExposureColor = (exposure: string) => {
+    if (exposure.includes('Critical')) return 'error';
+    if (exposure.includes('High')) return 'warning';
+    if (exposure.includes('Medium')) return 'info';
     return 'success';
   };
 
-  const getRiskSeverityLabel = (rating: number) => {
-    if (rating >= 20) return 'Critical';
-    if (rating >= 15) return 'High';
-    if (rating >= 10) return 'Medium';
-    return 'Low';
-  };
 
   if (isLoading) {
     return (
@@ -143,8 +136,8 @@ export const ViewRisk: React.FC = () => {
                 <Chip label={risk.risk_status} color="primary" size="small" />
                 <Chip label={risk.risk_category} color="secondary" size="small" />
                 <Chip
-                  label={`${getRiskSeverityLabel(risk.current_risk_rating)} Risk`}
-                  color={getRiskSeverityColor(risk.current_risk_rating)}
+                  label={`Net Exposure: ${risk.business_disruption_net_exposure}`}
+                  color={getNetExposureColor(risk.business_disruption_net_exposure)}
                   size="small"
                 />
               </Box>
@@ -155,27 +148,45 @@ export const ViewRisk: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Risk Assessment */}
+        {/* Business Disruption Assessment */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Risk Assessment
+                Business Disruption Assessment
               </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography variant="subtitle2">Inherent Risk</Typography>
-                  <Typography>Probability: {risk.inherent_probability}/5</Typography>
-                  <Typography>Impact: {risk.inherent_impact}/5</Typography>
-                  <Typography>Rating: {risk.inherent_risk_rating}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="subtitle2">Current Risk</Typography>
-                  <Typography>Probability: {risk.current_probability}/5</Typography>
-                  <Typography>Impact: {risk.current_impact}/5</Typography>
-                  <Typography>Rating: {risk.current_risk_rating}</Typography>
-                </Grid>
-              </Grid>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2">Impact Rating</Typography>
+                <Chip
+                  label={risk.business_disruption_impact_rating}
+                  color={risk.business_disruption_impact_rating === 'Catastrophic' ? 'error' :
+                         risk.business_disruption_impact_rating === 'Major' ? 'warning' :
+                         risk.business_disruption_impact_rating === 'Moderate' ? 'info' : 'success'}
+                  size="small"
+                  sx={{ mb: 1 }}
+                />
+                <Typography variant="body2">{risk.business_disruption_impact_description}</Typography>
+              </Box>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2">Likelihood Rating</Typography>
+                <Chip
+                  label={risk.business_disruption_likelihood_rating}
+                  color={risk.business_disruption_likelihood_rating === 'Probable' ? 'error' :
+                         risk.business_disruption_likelihood_rating === 'Possible' ? 'warning' :
+                         risk.business_disruption_likelihood_rating === 'Unlikely' ? 'info' : 'success'}
+                  size="small"
+                  sx={{ mb: 1 }}
+                />
+                <Typography variant="body2">{risk.business_disruption_likelihood_description}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Net Exposure</Typography>
+                <Chip
+                  label={risk.business_disruption_net_exposure}
+                  color={getNetExposureColor(risk.business_disruption_net_exposure)}
+                  size="medium"
+                />
+              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -190,7 +201,6 @@ export const ViewRisk: React.FC = () => {
               <Typography><strong>Risk Owner:</strong> {risk.risk_owner}</Typography>
               <Typography><strong>Department:</strong> {risk.risk_owner_department}</Typography>
               <Typography><strong>Technology Domain:</strong> {risk.technology_domain}</Typography>
-              <Typography><strong>Business Criticality:</strong> {risk.business_criticality}</Typography>
               {risk.risk_response_strategy && (
                 <Typography><strong>Response Strategy:</strong> {risk.risk_response_strategy}</Typography>
               )}
@@ -214,25 +224,27 @@ export const ViewRisk: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Systems & Impact */}
+        {/* Systems & Financial Impact */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Systems & Business Impact
+                Systems & Financial Impact
               </Typography>
               {risk.systems_affected && (
                 <Typography><strong>Systems Affected:</strong> {risk.systems_affected}</Typography>
               )}
-              <Typography><strong>IBS Impact:</strong> {risk.ibs_impact ? 'Yes' : 'No'}</Typography>
-              {risk.ibs_impact && risk.number_of_ibs_affected && (
-                <Typography><strong>IBS Affected:</strong> {risk.number_of_ibs_affected}</Typography>
+              {risk.ibs_affected && (
+                <Typography><strong>IBS Affected:</strong> {risk.ibs_affected}</Typography>
               )}
               {risk.financial_impact_low && (
                 <Typography><strong>Financial Impact (Low):</strong> ${risk.financial_impact_low.toLocaleString()}</Typography>
               )}
               {risk.financial_impact_high && (
                 <Typography><strong>Financial Impact (High):</strong> ${risk.financial_impact_high.toLocaleString()}</Typography>
+              )}
+              {risk.financial_impact_notes && (
+                <Typography><strong>Financial Impact Notes:</strong> {risk.financial_impact_notes}</Typography>
               )}
             </CardContent>
           </Card>
@@ -248,91 +260,85 @@ export const ViewRisk: React.FC = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={4}>
                   <Typography variant="subtitle2">Preventative Controls</Typography>
-                  <Chip
-                    label={risk.preventative_controls_status}
-                    color={risk.preventative_controls_status === 'Effective' ? 'success' : risk.preventative_controls_status === 'Partial' ? 'warning' : 'error'}
-                    size="small"
-                    sx={{ mb: 1 }}
-                  />
+                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                    <Chip
+                      label={risk.preventative_controls_coverage}
+                      color={risk.preventative_controls_coverage === 'Complete Coverage' ? 'success' :
+                             risk.preventative_controls_coverage === 'Incomplete Coverage' ? 'warning' :
+                             risk.preventative_controls_coverage === 'No Controls' ? 'error' : 'default'}
+                      size="small"
+                    />
+                    <Chip
+                      label={risk.preventative_controls_effectiveness}
+                      color={risk.preventative_controls_effectiveness === 'Fully Effective' ? 'success' :
+                             risk.preventative_controls_effectiveness === 'Partially Effective' ? 'warning' : 'default'}
+                      size="small"
+                    />
+                  </Box>
                   {risk.preventative_controls_description && (
                     <Typography variant="body2">{risk.preventative_controls_description}</Typography>
                   )}
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <Typography variant="subtitle2">Detective Controls</Typography>
-                  <Chip
-                    label={risk.detective_controls_status}
-                    color={risk.detective_controls_status === 'Effective' ? 'success' : risk.detective_controls_status === 'Partial' ? 'warning' : 'error'}
-                    size="small"
-                    sx={{ mb: 1 }}
-                  />
+                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                    <Chip
+                      label={risk.detective_controls_coverage}
+                      color={risk.detective_controls_coverage === 'Complete Coverage' ? 'success' :
+                             risk.detective_controls_coverage === 'Incomplete Coverage' ? 'warning' :
+                             risk.detective_controls_coverage === 'No Controls' ? 'error' : 'default'}
+                      size="small"
+                    />
+                    <Chip
+                      label={risk.detective_controls_effectiveness}
+                      color={risk.detective_controls_effectiveness === 'Fully Effective' ? 'success' :
+                             risk.detective_controls_effectiveness === 'Partially Effective' ? 'warning' : 'default'}
+                      size="small"
+                    />
+                  </Box>
                   {risk.detective_controls_description && (
                     <Typography variant="body2">{risk.detective_controls_description}</Typography>
                   )}
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <Typography variant="subtitle2">Corrective Controls</Typography>
-                  <Chip
-                    label={risk.corrective_controls_status}
-                    color={risk.corrective_controls_status === 'Effective' ? 'success' : risk.corrective_controls_status === 'Partial' ? 'warning' : 'error'}
-                    size="small"
-                    sx={{ mb: 1 }}
-                  />
+                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                    <Chip
+                      label={risk.corrective_controls_coverage}
+                      color={risk.corrective_controls_coverage === 'Complete Coverage' ? 'success' :
+                             risk.corrective_controls_coverage === 'Incomplete Coverage' ? 'warning' :
+                             risk.corrective_controls_coverage === 'No Controls' ? 'error' : 'default'}
+                      size="small"
+                    />
+                    <Chip
+                      label={risk.corrective_controls_effectiveness}
+                      color={risk.corrective_controls_effectiveness === 'Fully Effective' ? 'success' :
+                             risk.corrective_controls_effectiveness === 'Partially Effective' ? 'warning' : 'default'}
+                      size="small"
+                    />
+                  </Box>
                   {risk.corrective_controls_description && (
                     <Typography variant="body2">{risk.corrective_controls_description}</Typography>
                   )}
                 </Grid>
               </Grid>
-              {risk.control_gaps && (
-                <>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="subtitle2">Control Gaps</Typography>
-                  <Typography variant="body2">{risk.control_gaps}</Typography>
-                </>
-              )}
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Mitigations & Additional Info */}
+        {/* Mitigations */}
         <Grid item xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Mitigations & Additional Information
+                Risk Mitigation Plan
               </Typography>
               {risk.planned_mitigations && (
                 <>
                   <Typography variant="subtitle2">Planned Mitigations</Typography>
-                  <Typography variant="body2" paragraph>{risk.planned_mitigations}</Typography>
+                  <Typography variant="body2">{risk.planned_mitigations}</Typography>
                 </>
               )}
-              <Grid container spacing={2}>
-                {risk.rto_hours && (
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="subtitle2">RTO</Typography>
-                    <Typography>{risk.rto_hours} hours</Typography>
-                  </Grid>
-                )}
-                {risk.rpo_hours && (
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="subtitle2">RPO</Typography>
-                    <Typography>{risk.rpo_hours} hours</Typography>
-                  </Grid>
-                )}
-                {risk.sla_impact && (
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="subtitle2">SLA Impact</Typography>
-                    <Typography>{risk.sla_impact}</Typography>
-                  </Grid>
-                )}
-                {risk.slo_impact && (
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="subtitle2">SLO Impact</Typography>
-                    <Typography>{risk.slo_impact}</Typography>
-                  </Grid>
-                )}
-              </Grid>
             </CardContent>
           </Card>
         </Grid>
