@@ -132,7 +132,7 @@ fi
 if [[ "$SKIP_TERRAFORM" == false ]]; then
     log_info "Deploying infrastructure with Terraform..."
     cd terraform
-    
+
     # Check if terraform.tfvars exists
     if [[ ! -f "terraform.tfvars" ]]; then
         log_warn "terraform.tfvars not found. Creating from template..."
@@ -143,15 +143,15 @@ if [[ "$SKIP_TERRAFORM" == false ]]; then
         log_info "Please review and update terraform.tfvars before proceeding."
         read -p "Press Enter to continue after reviewing terraform.tfvars..."
     fi
-    
+
     # Initialize Terraform
     log_info "Initializing Terraform..."
     terraform init
-    
+
     # Plan Terraform
     log_info "Planning Terraform deployment..."
     terraform plan -var="project_id=$PROJECT_ID" -var="region=$REGION" -var="environment=$ENVIRONMENT"
-    
+
     # Apply Terraform
     read -p "Do you want to apply these changes? (y/N): " -n 1 -r
     echo
@@ -163,11 +163,11 @@ if [[ "$SKIP_TERRAFORM" == false ]]; then
         log_warn "Terraform apply cancelled."
         exit 1
     fi
-    
+
     # Get outputs
     log_info "Getting Terraform outputs..."
     CONTAINER_REGISTRY=$(terraform output -raw container_registry)
-    
+
     cd ..
 else
     log_warn "Skipping Terraform deployment"
@@ -187,12 +187,18 @@ else
     log_warn "Skipping Docker build and push"
 fi
 
-# Get frontend URL from Terraform if available (for CORS)
+# Get configuration from Terraform if available
 CORS_ORIGINS="*"  # Default to allow all origins
+DATABASE_URL="sqlite:///./risk_register.db"  # Default database URL
+GCP_BUCKET_NAME=""  # Default to empty, will be set if available
+
 if [[ "$SKIP_TERRAFORM" == false ]] && command -v terraform &> /dev/null && [[ -d "terraform" ]]; then
     cd terraform
     FRONTEND_IP=$(terraform output -raw frontend_ip 2>/dev/null || echo "")
+    DATABASE_BUCKET_NAME=$(terraform output -raw database_bucket_name 2>/dev/null || echo "")
     cd ..
+
+    # Set CORS origins if frontend IP is available
     if [[ -n "$FRONTEND_IP" ]]; then
         log_info "Configuring CORS for HTTP frontend IP: $FRONTEND_IP"
         # Use semicolon-separated values with alternate delimiter to avoid comma issues
@@ -201,6 +207,14 @@ if [[ "$SKIP_TERRAFORM" == false ]] && command -v terraform &> /dev/null && [[ -
         log_warn "Could not determine frontend IP, using wildcard CORS"
         CORS_ORIGINS="*"
     fi
+
+    # Set GCS bucket name if available
+    if [[ -n "$DATABASE_BUCKET_NAME" ]]; then
+        GCP_BUCKET_NAME="$DATABASE_BUCKET_NAME"
+        log_info "Using database bucket: $GCP_BUCKET_NAME"
+    else
+        log_warn "Could not determine database bucket name"
+    fi
 else
     log_warn "Terraform not available, using wildcard CORS"
     CORS_ORIGINS="*"
@@ -208,6 +222,13 @@ fi
 
 # Deploy to Cloud Run
 log_info "Deploying backend to Cloud Run..."
+
+# Build environment variables string
+ENV_VARS="GCP_PROJECT_ID=$PROJECT_ID,ENVIRONMENT=$ENVIRONMENT,ALLOWED_ORIGINS=$CORS_ORIGINS,DATABASE_URL=$DATABASE_URL"
+if [[ -n "$GCP_BUCKET_NAME" ]]; then
+    ENV_VARS="$ENV_VARS,GCP_BUCKET_NAME=$GCP_BUCKET_NAME"
+fi
+
 gcloud run deploy technology-risk-register \
     --image $CONTAINER_REGISTRY/technology-risk-register:latest \
     --platform managed \
@@ -218,7 +239,7 @@ gcloud run deploy technology-risk-register \
     --cpu 1 \
     --min-instances 0 \
     --max-instances 10 \
-    --set-env-vars "GCP_PROJECT_ID=$PROJECT_ID,ENVIRONMENT=$ENVIRONMENT,ALLOWED_ORIGINS=$CORS_ORIGINS"
+    --set-env-vars "$ENV_VARS"
 
 # Get the service URL
 SERVICE_URL=$(gcloud run services describe technology-risk-register --region=$REGION --format="value(status.url)")

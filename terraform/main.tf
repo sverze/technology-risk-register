@@ -19,7 +19,7 @@ resource "google_artifact_registry_repository" "container_repo" {
   repository_id = "${var.app_name}-repo"
   description   = "Container registry for ${var.app_name}"
   format        = "DOCKER"
-  
+
   depends_on = [google_project_service.required_apis]
 }
 
@@ -30,11 +30,11 @@ resource "google_storage_bucket" "database_bucket" {
 
   uniform_bucket_level_access = true
   force_destroy = true  # Allow deletion even with objects
-  
+
   versioning {
     enabled = true
   }
-  
+
   lifecycle_rule {
     condition {
       age = 30
@@ -44,7 +44,7 @@ resource "google_storage_bucket" "database_bucket" {
       type = "Delete"
     }
   }
-  
+
   depends_on = [google_project_service.required_apis]
 }
 
@@ -239,82 +239,77 @@ resource "google_compute_global_forwarding_rule" "frontend_http" {
   depends_on = [google_project_service.required_apis]
 }
 
-# Cloud Run service
-resource "google_cloud_run_service" "app" {
+# Cloud Run service with GCS volume mount
+resource "google_cloud_run_v2_service" "app" {
+  provider = google-beta
   name     = var.app_name
   location = var.region
-  
+
   template {
-    metadata {
-      annotations = {
-        "autoscaling.knative.dev/minScale" = tostring(var.min_instances)
-        "autoscaling.knative.dev/maxScale" = tostring(var.max_instances)
-        "run.googleapis.com/cloudsql-instances" = ""
-        "run.googleapis.com/execution-environment" = "gen2"
-      }
+    service_account = google_service_account.cloud_run_sa.email
+
+    scaling {
+      min_instance_count = var.min_instances
+      max_instance_count = var.max_instances
     }
-    
-    spec {
-      service_account_name = google_service_account.cloud_run_sa.email
-      
-      containers {
-        image = "gcr.io/cloudrun/hello"
-        
-        resources {
-          limits = {
-            cpu    = var.cpu_limit
-            memory = var.memory_limit
-          }
+
+    containers {
+      image = "gcr.io/cloudrun/hello"
+
+      resources {
+        limits = {
+          cpu    = var.cpu_limit
+          memory = var.memory_limit
         }
-        
-        ports {
-          container_port = 8080
-        }
-        
-        env {
-          name  = "DATABASE_URL"
-          value = "sqlite:///./risk_register.db"
-        }
-        
-        env {
-          name  = "GCP_PROJECT_ID"
-          value = var.project_id
-        }
-        
-        env {
-          name  = "GCP_BUCKET_NAME"
-          value = google_storage_bucket.database_bucket.name
-        }
-        
-        env {
-          name  = "ENVIRONMENT"
-          value = var.environment
-        }
+      }
+
+      ports {
+        container_port = 8080
+      }
+
+      env {
+        name  = "DATABASE_URL"
+        value = "sqlite:///./risk_register.db"
+      }
+
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+
+      env {
+        name  = "GCP_BUCKET_NAME"
+        value = google_storage_bucket.database_bucket.name
+      }
+
+      env {
+        name  = "ENVIRONMENT"
+        value = var.environment
       }
     }
   }
-  
+
   traffic {
-    percent         = 100
-    latest_revision = true
+    percent = 100
+    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
   }
-  
+
   depends_on = [google_project_service.required_apis]
-  
+
   lifecycle {
     ignore_changes = [
-      template[0].spec[0].containers[0].image,
+      template[0].containers[0].image,
     ]
   }
 }
 
 # Cloud Run IAM policy for public access
-resource "google_cloud_run_service_iam_binding" "public_access" {
-  location = google_cloud_run_service.app.location
-  project  = google_cloud_run_service.app.project
-  service  = google_cloud_run_service.app.name
+resource "google_cloud_run_v2_service_iam_binding" "public_access" {
+  location = google_cloud_run_v2_service.app.location
+  project  = google_cloud_run_v2_service.app.project
+  name     = google_cloud_run_v2_service.app.name
   role     = "roles/run.invoker"
-  
+
   members = [
     "allUsers",
   ]
@@ -323,15 +318,15 @@ resource "google_cloud_run_service_iam_binding" "public_access" {
 # Custom domain mapping (optional)
 resource "google_cloud_run_domain_mapping" "domain" {
   count = var.domain_name != "" ? 1 : 0
-  
+
   location = var.region
   name     = var.domain_name
-  
+
   metadata {
     namespace = var.project_id
   }
-  
+
   spec {
-    route_name = google_cloud_run_service.app.name
+    route_name = google_cloud_run_v2_service.app.name
   }
 }

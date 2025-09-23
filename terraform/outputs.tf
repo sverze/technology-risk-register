@@ -1,6 +1,6 @@
 output "cloud_run_url" {
   description = "The URL of the deployed Cloud Run service"
-  value       = google_cloud_run_service.app.status[0].url
+  value       = google_cloud_run_v2_service.app.uri
 }
 
 output "project_id" {

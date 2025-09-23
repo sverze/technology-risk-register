@@ -118,13 +118,15 @@ gcloud run services logs tail technology-risk-register --region=us-central1
 
 ### Deployment
 - **Local**: SQLite database file, Docker Compose for full stack
-- **GCP Production**: Cloud Run + Cloud Storage for SQLite + Terraform IaC
+- **GCP Production**: Cloud Run + Cloud Storage sync for SQLite + Terraform IaC
   - Container Registry: Artifact Registry for Docker images
-  - Database: SQLite file synced with Cloud Storage bucket
+  - Database: SQLite with sync-on-write to Cloud Storage bucket for persistence
+  - Data Persistence: `@sync_database_after_write` decorator ensures data persists across container restarts
+  - Startup: Downloads existing database from Cloud Storage on container start
   - Scaling: 0-10 instances, pay-per-use pricing
   - HTTPS: Automatic SSL certificates, custom domain support
   - Database migrations run automatically on startup
-  - Admin endpoints: `/api/v1/admin/` for database management
+  - Admin endpoints: `/api/v1/admin/` for database management and diagnostics
 - Environment variables for configuration
 - When confronted with UI related issues consider using playwright to test and diagnose the issue
 

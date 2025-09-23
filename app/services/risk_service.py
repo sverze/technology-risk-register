@@ -2,6 +2,7 @@ from datetime import date, datetime
 
 from sqlalchemy.orm import Session
 
+from app.core.sync import sync_database_after_write
 from app.models.risk import Risk, RiskLogEntry
 
 # Legacy import for backward compatibility
@@ -33,10 +34,7 @@ class RiskService:
             query = query.filter(Risk.risk_status == status)
         if search:
             search_term = f"%{search}%"
-            query = query.filter(
-                Risk.risk_title.ilike(search_term)
-                | Risk.risk_description.ilike(search_term)
-            )
+            query = query.filter(Risk.risk_title.ilike(search_term) | Risk.risk_description.ilike(search_term))
 
         # Apply sorting
         if sort_by:
@@ -68,10 +66,7 @@ class RiskService:
             query = query.filter(Risk.risk_status == status)
         if search:
             search_term = f"%{search}%"
-            query = query.filter(
-                Risk.risk_title.ilike(search_term)
-                | Risk.risk_description.ilike(search_term)
-            )
+            query = query.filter(Risk.risk_title.ilike(search_term) | Risk.risk_description.ilike(search_term))
 
         return query.count()
 
@@ -79,13 +74,14 @@ class RiskService:
         """Get a single risk by ID."""
         return self.db.query(Risk).filter(Risk.risk_id == risk_id).first()
 
+    @sync_database_after_write
     def create_risk(self, risk_data: RiskCreate) -> Risk:
         """Create a new risk."""
         # Use provided risk_id or generate one if not provided
         risk_id = risk_data.risk_id or self._generate_risk_id()
 
         # Create risk with calculated net exposure
-        risk_dict = risk_data.dict(exclude={'risk_id'})
+        risk_dict = risk_data.dict(exclude={"risk_id"})
         db_risk = Risk(risk_id=risk_id, **risk_dict)
         db_risk.calculate_net_exposure()
 
@@ -108,6 +104,7 @@ class RiskService:
 
         return db_risk
 
+    @sync_database_after_write
     def update_risk(self, risk_id: str, risk_data: RiskUpdateSchema) -> Risk | None:
         """Update an existing risk."""
         db_risk = self.get_risk(risk_id)
@@ -148,6 +145,7 @@ class RiskService:
         self.db.refresh(db_risk)
         return db_risk
 
+    @sync_database_after_write
     def delete_risk(self, risk_id: str) -> bool:
         """Delete a risk."""
         db_risk = self.get_risk(risk_id)
@@ -165,9 +163,7 @@ class RiskService:
 
         # Find next sequence number for this year
         like_pattern = f"TR-{year}-%"
-        existing_count = (
-            self.db.query(Risk).filter(Risk.risk_id.like(like_pattern)).count()
-        )
+        existing_count = self.db.query(Risk).filter(Risk.risk_id.like(like_pattern)).count()
 
         sequence = existing_count + 1
 
@@ -220,9 +216,7 @@ class RiskService:
     ) -> None:
         """Create a log entry (internal helper method)."""
         # Generate log entry ID
-        existing_count = (
-            self.db.query(RiskLogEntry).filter(RiskLogEntry.risk_id == risk_id).count()
-        )
+        existing_count = self.db.query(RiskLogEntry).filter(RiskLogEntry.risk_id == risk_id).count()
         log_entry_id = f"LOG-{risk_id}-{existing_count + 1:03d}"
 
         log_entry = RiskLogEntry(
@@ -263,14 +257,11 @@ class RiskService:
         )
 
     # New RiskLogEntry methods
+    @sync_database_after_write
     def create_risk_log_entry(self, log_entry_data: RiskLogEntryCreate) -> RiskLogEntry:
         """Create a new log entry for a risk."""
         # Generate log entry ID
-        existing_count = (
-            self.db.query(RiskLogEntry)
-            .filter(RiskLogEntry.risk_id == log_entry_data.risk_id)
-            .count()
-        )
+        existing_count = self.db.query(RiskLogEntry).filter(RiskLogEntry.risk_id == log_entry_data.risk_id).count()
         log_entry_id = f"LOG-{log_entry_data.risk_id}-{existing_count + 1:03d}"
 
         # Get current risk data for context
@@ -305,15 +296,10 @@ class RiskService:
 
     def get_risk_log_entry(self, log_entry_id: str) -> RiskLogEntry | None:
         """Get a specific log entry by ID."""
-        return (
-            self.db.query(RiskLogEntry)
-            .filter(RiskLogEntry.log_entry_id == log_entry_id)
-            .first()
-        )
+        return self.db.query(RiskLogEntry).filter(RiskLogEntry.log_entry_id == log_entry_id).first()
 
-    def update_risk_log_entry(
-        self, log_entry_id: str, log_entry_data: RiskLogEntryUpdate
-    ) -> RiskLogEntry | None:
+    @sync_database_after_write
+    def update_risk_log_entry(self, log_entry_id: str, log_entry_data: RiskLogEntryUpdate) -> RiskLogEntry | None:
         """Update an existing log entry."""
         db_log_entry = self.get_risk_log_entry(log_entry_id)
         if not db_log_entry:
@@ -328,9 +314,7 @@ class RiskService:
 
         return db_log_entry
 
-    def approve_risk_log_entry(
-        self, log_entry_id: str, reviewed_by: str
-    ) -> RiskLogEntry | None:
+    def approve_risk_log_entry(self, log_entry_id: str, reviewed_by: str) -> RiskLogEntry | None:
         """Approve a log entry and update the parent risk's current rating."""
         db_log_entry = self.get_risk_log_entry(log_entry_id)
         if not db_log_entry:
@@ -349,9 +333,7 @@ class RiskService:
 
         return db_log_entry
 
-    def reject_risk_log_entry(
-        self, log_entry_id: str, reviewed_by: str
-    ) -> RiskLogEntry | None:
+    def reject_risk_log_entry(self, log_entry_id: str, reviewed_by: str) -> RiskLogEntry | None:
         """Reject a log entry."""
         db_log_entry = self.get_risk_log_entry(log_entry_id)
         if not db_log_entry:
@@ -367,6 +349,7 @@ class RiskService:
 
         return db_log_entry
 
+    @sync_database_after_write
     def delete_risk_log_entry(self, log_entry_id: str) -> bool:
         """Delete a log entry."""
         db_log_entry = self.get_risk_log_entry(log_entry_id)
