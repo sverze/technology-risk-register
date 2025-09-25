@@ -81,16 +81,16 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
         next_review_required: logEntry.next_review_required ? new Date(logEntry.next_review_required) : undefined,
       });
     } else {
-      // Reset form for creating new entry
+      // Reset form for creating new entry - auto-fill previous values from current risk
       setFormData({
         entry_date: new Date(),
         entry_type: 'General Update',
         entry_summary: '',
-        previous_net_exposure: undefined,
+        previous_net_exposure: risk.business_disruption_net_exposure,
         new_net_exposure: undefined,
-        previous_impact_rating: undefined,
+        previous_impact_rating: risk.business_disruption_impact_rating,
         new_impact_rating: undefined,
-        previous_likelihood_rating: undefined,
+        previous_likelihood_rating: risk.business_disruption_likelihood_rating,
         new_likelihood_rating: undefined,
         mitigation_actions_taken: '',
         risk_owner_at_time: risk.risk_owner,
@@ -101,7 +101,7 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
       });
     }
     setErrors({});
-  }, [isEditing, logEntry, risk.risk_owner]);
+  }, [isEditing, logEntry, risk.risk_owner, risk.business_disruption_net_exposure, risk.business_disruption_impact_rating, risk.business_disruption_likelihood_rating]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -123,6 +123,17 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
 
     if (formData.new_likelihood_rating && !validLikelihoodRatings.includes(formData.new_likelihood_rating)) {
       newErrors.new_likelihood_rating = 'Invalid likelihood rating';
+    }
+
+    // Validate that both new ratings are set together or both are empty
+    const hasNewImpact = formData.new_impact_rating && formData.new_impact_rating.trim() !== '';
+    const hasNewLikelihood = formData.new_likelihood_rating && formData.new_likelihood_rating.trim() !== '';
+
+    if (hasNewImpact && !hasNewLikelihood) {
+      newErrors.new_likelihood_rating = 'Both New Impact Rating and New Likelihood Rating must be set together';
+    }
+    if (hasNewLikelihood && !hasNewImpact) {
+      newErrors.new_impact_rating = 'Both New Impact Rating and New Likelihood Rating must be set together';
     }
 
     setErrors(newErrors);
@@ -185,16 +196,8 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
     }
   };
 
-  const handleAutoFillCurrentRating = () => {
-    setFormData(prev => ({
-      ...prev,
-      previous_net_exposure: risk.business_disruption_net_exposure,
-      previous_impact_rating: risk.business_disruption_impact_rating,
-      previous_likelihood_rating: risk.business_disruption_likelihood_rating,
-    }));
-  };
-
-  const calculateNewNetExposure = () => {
+  // Auto-calculate Net Exposure when both new ratings are set
+  useEffect(() => {
     if (formData.new_impact_rating && formData.new_likelihood_rating) {
       // Map ratings to matrix values
       const impactValues = { 'Low': 1, 'Moderate': 2, 'Major': 3, 'Catastrophic': 4 };
@@ -215,8 +218,11 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
         const newExposure = `${exposureLevel} (${matrixValue})`;
         setFormData(prev => ({ ...prev, new_net_exposure: newExposure }));
       }
+    } else if (!formData.new_impact_rating && !formData.new_likelihood_rating) {
+      // Clear new net exposure if both ratings are cleared
+      setFormData(prev => ({ ...prev, new_net_exposure: undefined }));
     }
-  };
+  }, [formData.new_impact_rating, formData.new_likelihood_rating]);
 
   const hasRatingChange = formData.previous_net_exposure !== formData.new_net_exposure &&
                          formData.new_net_exposure !== undefined;
@@ -283,40 +289,18 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
               <Typography variant="h6" gutterBottom>
                 Business Disruption Assessment Changes (Optional)
               </Typography>
-              <Box sx={{ mb: 2 }}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={handleAutoFillCurrentRating}
-                  sx={{ mr: 2 }}
-                >
-                  Auto-fill Current Values
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={calculateNewNetExposure}
-                  disabled={!formData.new_impact_rating || !formData.new_likelihood_rating}
-                >
-                  Calculate New Net Exposure
-                </Button>
-              </Box>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Previous Impact Rating</InputLabel>
-                <Select
-                  value={formData.previous_impact_rating || ''}
-                  label="Previous Impact Rating"
-                  onChange={(e) => setFormData(prev => ({ ...prev, previous_impact_rating: e.target.value || undefined }))}
-                >
-                  <MenuItem value="Low">Low</MenuItem>
-                  <MenuItem value="Moderate">Moderate</MenuItem>
-                  <MenuItem value="Major">Major</MenuItem>
-                  <MenuItem value="Catastrophic">Catastrophic</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                label="Previous Impact Rating"
+                value={formData.previous_impact_rating || ''}
+                InputProps={{
+                  readOnly: true,
+                }}
+                helperText="Auto-filled from current risk rating"
+              />
             </Grid>
 
             <Grid item xs={12} md={6}>
@@ -337,19 +321,15 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Previous Likelihood Rating</InputLabel>
-                <Select
-                  value={formData.previous_likelihood_rating || ''}
-                  label="Previous Likelihood Rating"
-                  onChange={(e) => setFormData(prev => ({ ...prev, previous_likelihood_rating: e.target.value || undefined }))}
-                >
-                  <MenuItem value="Remote">Remote</MenuItem>
-                  <MenuItem value="Unlikely">Unlikely</MenuItem>
-                  <MenuItem value="Possible">Possible</MenuItem>
-                  <MenuItem value="Probable">Probable</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                label="Previous Likelihood Rating"
+                value={formData.previous_likelihood_rating || ''}
+                InputProps={{
+                  readOnly: true,
+                }}
+                helperText="Auto-filled from current risk rating"
+              />
             </Grid>
 
             <Grid item xs={12} md={6}>
@@ -374,8 +354,10 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
                 fullWidth
                 label="Previous Net Exposure"
                 value={formData.previous_net_exposure || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, previous_net_exposure: e.target.value || undefined }))}
-                helperText="e.g., 'Critical (15)' or 'High (12)'"
+                InputProps={{
+                  readOnly: true,
+                }}
+                helperText="Auto-filled from current risk exposure"
               />
             </Grid>
 
@@ -384,8 +366,10 @@ export const RiskLogEntryForm: React.FC<RiskLogEntryFormProps> = ({
                 fullWidth
                 label="New Net Exposure"
                 value={formData.new_net_exposure || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, new_net_exposure: e.target.value || undefined }))}
-                helperText="Will be auto-calculated when using the Calculate button above"
+                InputProps={{
+                  readOnly: true,
+                }}
+                helperText="Auto-calculated when both New Impact and Likelihood ratings are set"
               />
             </Grid>
 
