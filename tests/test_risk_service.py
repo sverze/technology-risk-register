@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from app.models.risk import Risk, RiskLogEntry
 from app.schemas.risk import RiskCreate
-from app.schemas.risk import RiskLogEntry as RiskLogEntrySchema
+from app.schemas.risk import RiskLogEntryResponse as RiskLogEntrySchema
 from app.services.risk_service import RiskService
 
 

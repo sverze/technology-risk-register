@@ -150,3 +150,4 @@ gcloud run services logs tail technology-risk-register --region=us-central1
 - Use remote state backend (GCS, S3) for production deployments
 - Keep sensitive values in CI/CD secrets or external key management
 - Never commit state files - they contain actual resource identifiers and configuration
+- The server is running on port 8080 not 8008 which is what has come up a few times

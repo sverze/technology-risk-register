@@ -29,6 +29,7 @@ resource "google_storage_bucket" "database_bucket" {
   location = var.region
 
   uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
   force_destroy = true  # Allow deletion even with objects
 
   versioning {
@@ -54,6 +55,7 @@ resource "google_storage_bucket" "assets_bucket" {
   location = var.region
 
   uniform_bucket_level_access = true
+  public_access_prevention    = "inherited"
   force_destroy = true  # Allow deletion even with objects
 
   # Enable website hosting

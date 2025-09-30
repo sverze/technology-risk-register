@@ -30,7 +30,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useRisks } from '@/hooks/useRisks';
 import { useDropdownValues } from '@/hooks/useDropdownValues';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const getNetExposureColor = (exposure: string): 'error' | 'warning' | 'info' | 'success' => {
   if (exposure.includes('Critical')) return 'error';
@@ -150,9 +150,17 @@ export const RiskList: React.FC = () => {
     }));
 
     // Create workbook with risks sheet
-    const wb = XLSX.utils.book_new();
-    const risksWs = XLSX.utils.json_to_sheet(risksExportData);
-    XLSX.utils.book_append_sheet(wb, risksWs, 'Risks');
+    const workbook = new ExcelJS.Workbook();
+    const risksWs = workbook.addWorksheet('Risks');
+
+    // Add header row and data rows for risks
+    if (risksExportData.length > 0) {
+      const headers = Object.keys(risksExportData[0]);
+      risksWs.addRow(headers);
+      risksExportData.forEach(risk => {
+        risksWs.addRow(Object.values(risk));
+      });
+    }
 
     // Try to get log entries for all risks
     try {
@@ -194,8 +202,12 @@ export const RiskList: React.FC = () => {
       }
       
       if (logEntriesData.length > 0) {
-        const logEntriesWs = XLSX.utils.json_to_sheet(logEntriesData);
-        XLSX.utils.book_append_sheet(wb, logEntriesWs, 'Risk Log Entries');
+        const logEntriesWs = workbook.addWorksheet('Risk Log Entries');
+        const logHeaders = Object.keys(logEntriesData[0]);
+        logEntriesWs.addRow(logHeaders);
+        logEntriesData.forEach(entry => {
+          logEntriesWs.addRow(Object.values(entry));
+        });
       }
     } catch (error) {
       console.warn('Could not fetch log entries for export:', error);
@@ -203,10 +215,21 @@ export const RiskList: React.FC = () => {
 
     // Download the file
     const filename = `technology-risks-export-${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, filename);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (!risksData?.items || risksData.items.length === 0) {
       return;
     }
@@ -229,10 +252,22 @@ export const RiskList: React.FC = () => {
       'Next Review Date': risk.next_review_date ? new Date(risk.next_review_date).toLocaleDateString() : '',
     }));
 
-    const ws = XLSX.utils.json_to_sheet(risksExportData);
-    const csv = XLSX.utils.sheet_to_csv(ws);
-    
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // Create workbook and worksheet for CSV export
+    const workbook = new ExcelJS.Workbook();
+    const ws = workbook.addWorksheet('Risks');
+
+    // Add header row and data
+    if (risksExportData.length > 0) {
+      const headers = Object.keys(risksExportData[0]);
+      ws.addRow(headers);
+      risksExportData.forEach(risk => {
+        ws.addRow(Object.values(risk));
+      });
+    }
+
+    // Generate CSV from workbook
+    const buffer = await workbook.csv.writeBuffer();
+    const blob = new Blob([buffer], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
