@@ -52,7 +52,28 @@ variable "memory_limit" {
 }
 
 variable "allowed_origins" {
-  description = "Allowed CORS origins"
+  description = "Additional CORS origins (e.g., custom domains). The Load Balancer IP is automatically included."
   type        = list(string)
-  default     = ["*"]
+  default     = []
+}
+
+variable "auth_username" {
+  description = "Username for basic authentication"
+  type        = string
+  default     = "admin"
+  sensitive   = true
+}
+
+variable "auth_password" {
+  description = "Password for basic authentication"
+  type        = string
+  default     = ""  # Must be set in terraform.tfvars
+  sensitive   = true
+}
+
+variable "auth_secret_key" {
+  description = "Secret key for JWT token signing"
+  type        = string
+  default     = ""  # Must be set in terraform.tfvars
+  sensitive   = true
 }

@@ -45,6 +45,16 @@ class Settings(BaseSettings):
     GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "")
     GCP_BUCKET_NAME: str = os.getenv("GCP_BUCKET_NAME", "")
 
+    # Authentication
+    AUTH_USERNAME: str = os.getenv("AUTH_USERNAME", "admin")
+    AUTH_PASSWORD: str = os.getenv("AUTH_PASSWORD", "changeme")
+    AUTH_SECRET_KEY: str = os.getenv(
+        "AUTH_SECRET_KEY",
+        "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"  # Default for local dev only
+    )
+    AUTH_ALGORITHM: str = "HS256"
+    AUTH_TOKEN_EXPIRE_HOURS: int = 12
+
     class Config:
         env_file = ".env"
         case_sensitive = True

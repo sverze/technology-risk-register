@@ -288,6 +288,33 @@ resource "google_cloud_run_v2_service" "app" {
         name  = "ENVIRONMENT"
         value = var.environment
       }
+
+      env {
+        name  = "AUTH_USERNAME"
+        value = var.auth_username
+      }
+
+      env {
+        name  = "AUTH_PASSWORD"
+        value = var.auth_password
+      }
+
+      env {
+        name  = "AUTH_SECRET_KEY"
+        value = var.auth_secret_key
+      }
+
+      env {
+        name  = "ALLOWED_ORIGINS"
+        value = jsonencode(concat(
+          [
+            "http://${google_compute_global_forwarding_rule.frontend_http.ip_address}",
+            "http://${google_compute_global_forwarding_rule.frontend_http.ip_address}:80",
+            "https://${google_compute_global_forwarding_rule.frontend_http.ip_address}",
+          ],
+          var.allowed_origins
+        ))
+      }
     }
   }
 

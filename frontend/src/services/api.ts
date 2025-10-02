@@ -16,13 +16,37 @@ export class ApiError extends Error {
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
+  // Get JWT token from localStorage
+  const token = localStorage.getItem('auth_token');
+
+  // Add Authorization header if token exists
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
     ...options,
   });
+
+  // Handle 401 Unauthorized - redirect to login
+  if (response.status === 401) {
+    // Clear invalid token
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_username');
+
+    // Redirect to login page if not already there
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+
+    throw new ApiError(response.status, 'Unauthorized - please log in');
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
