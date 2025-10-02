@@ -65,15 +65,23 @@ variable "auth_username" {
 }
 
 variable "auth_password" {
-  description = "Password for basic authentication"
+  description = "Password for basic authentication (REQUIRED - must be set in terraform.tfvars)"
   type        = string
-  default     = ""  # Must be set in terraform.tfvars
   sensitive   = true
+
+  validation {
+    condition     = length(var.auth_password) >= 8
+    error_message = "auth_password must be at least 8 characters long and contain letters and numbers."
+  }
 }
 
 variable "auth_secret_key" {
-  description = "Secret key for JWT token signing"
+  description = "Secret key for JWT token signing (REQUIRED - must be set in terraform.tfvars)"
   type        = string
-  default     = ""  # Must be set in terraform.tfvars
   sensitive   = true
+
+  validation {
+    condition     = length(var.auth_secret_key) >= 32
+    error_message = "auth_secret_key must be at least 32 characters long. Generate with: openssl rand -hex 32"
+  }
 }
