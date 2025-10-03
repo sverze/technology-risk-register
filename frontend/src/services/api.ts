@@ -1,5 +1,6 @@
 import type { Risk, DashboardData, DropdownValues, RiskUpdate, PaginatedResponse } from '@/types/risk';
 import type { RiskLogEntry, RiskLogEntryCreate, RiskLogEntryUpdate } from '@/types/riskLogEntry';
+import { getToken, getRefreshToken, refreshAccessToken, clearAuth } from '@/lib/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -17,7 +18,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   const url = `${API_BASE_URL}${endpoint}`;
 
   // Get JWT token from localStorage
-  const token = localStorage.getItem('auth_token');
+  let token = getToken();
 
   // Add Authorization header if token exists
   const headers: Record<string, string> = {
@@ -29,23 +30,38 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
+  let response = await fetch(url, {
     headers,
     ...options,
   });
 
-  // Handle 401 Unauthorized - redirect to login
-  if (response.status === 401) {
-    // Clear invalid token
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_username');
+  // Handle 401 Unauthorized - try to refresh token
+  if (response.status === 401 && getRefreshToken()) {
+    try {
+      // Attempt to refresh the access token
+      const newToken = await refreshAccessToken();
 
-    // Redirect to login page if not already there
+      // Retry the request with the new token
+      headers['Authorization'] = `Bearer ${newToken}`;
+      response = await fetch(url, {
+        headers,
+        ...options,
+      });
+    } catch (error) {
+      // Refresh failed - redirect to login
+      clearAuth();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      throw new ApiError(401, 'Session expired - please log in');
+    }
+  } else if (response.status === 401) {
+    // No refresh token available - redirect to login
+    clearAuth();
     if (window.location.pathname !== '/login') {
       window.location.href = '/login';
     }
-
-    throw new ApiError(response.status, 'Unauthorized - please log in');
+    throw new ApiError(401, 'Unauthorized - please log in');
   }
 
   if (!response.ok) {

@@ -5,14 +5,35 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 
 from app.core.config import settings
-from app.core.security import create_access_token, decode_access_token, get_current_user, verify_password
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_access_token,
+    decode_refresh_token,
+    get_current_user,
+    verify_password,
+)
 
 router = APIRouter()
 security = HTTPBasic()
 
 
 class Token(BaseModel):
-    """Response model for successful login."""
+    """Response model for successful login with both access and refresh tokens."""
+
+    access_token: str
+    refresh_token: str
+    token_type: str
+
+
+class RefreshRequest(BaseModel):
+    """Request model for refresh token endpoint."""
+
+    refresh_token: str
+
+
+class AccessTokenResponse(BaseModel):
+    """Response model for refresh token endpoint (only access token)."""
 
     access_token: str
     token_type: str
@@ -34,17 +55,17 @@ class LogoutResponse(BaseModel):
 @router.post("/login", response_model=Token)
 async def login(credentials: HTTPBasicCredentials = Depends(security)) -> Token:
     """
-    Authenticate user and return JWT access token.
+    Authenticate user and return JWT access and refresh tokens.
 
     This endpoint accepts HTTP Basic Auth credentials:
     - Username and password in Authorization header
-    - Returns JWT token valid for 12 hours
+    - Returns short-lived access token (30 min) and long-lived refresh token (7 days)
 
     Args:
         credentials: HTTP Basic Auth credentials
 
     Returns:
-        Token object with access_token and token_type
+        Token object with access_token, refresh_token, and token_type
 
     Raises:
         HTTPException: 401 if credentials are invalid
@@ -70,10 +91,11 @@ async def login(credentials: HTTPBasicCredentials = Depends(security)) -> Token:
             headers={"WWW-Authenticate": "Basic"},
         )
 
-    # Create JWT token with username as subject
+    # Create JWT tokens with username as subject
     access_token = create_access_token(data={"sub": credentials.username})
+    refresh_token = create_refresh_token(data={"sub": credentials.username})
 
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 @router.get("/verify", response_model=TokenVerifyResponse)
@@ -95,6 +117,41 @@ async def verify_token(username: str = Depends(get_current_user)) -> TokenVerify
     return TokenVerifyResponse(valid=True, username=username)
 
 
+@router.post("/refresh", response_model=AccessTokenResponse)
+async def refresh_access_token(request: RefreshRequest) -> AccessTokenResponse:
+    """
+    Get a new access token using a refresh token.
+
+    This endpoint allows clients to obtain a new access token without
+    requiring the user to log in again. The refresh token must be valid
+    and not expired.
+
+    Args:
+        request: Request containing the refresh token
+
+    Returns:
+        AccessTokenResponse with new access_token and token_type
+
+    Raises:
+        HTTPException: 401 if refresh token is invalid or expired
+    """
+    # Decode and validate refresh token
+    payload = decode_refresh_token(request.refresh_token)
+    username: str = payload.get("sub")
+
+    if username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Create new access token
+    access_token = create_access_token(data={"sub": username})
+
+    return AccessTokenResponse(access_token=access_token, token_type="bearer")
+
+
 @router.post("/logout", response_model=LogoutResponse)
 async def logout(username: str = Depends(get_current_user)) -> LogoutResponse:
     """
@@ -102,7 +159,8 @@ async def logout(username: str = Depends(get_current_user)) -> LogoutResponse:
 
     Since JWT tokens are stateless, this endpoint primarily serves
     as a signal to the client to remove the token from storage.
-    The token will still be valid until it expires (12 hours).
+    The access token will be valid until it expires (30 minutes),
+    and the refresh token will be valid until it expires (7 days).
 
     Args:
         username: Username extracted from valid JWT token

@@ -4,6 +4,7 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const TOKEN_KEY = 'auth_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 const USERNAME_KEY = 'auth_username';
 
 export interface LoginCredentials {
@@ -13,6 +14,7 @@ export interface LoginCredentials {
 
 export interface AuthToken {
   access_token: string;
+  refresh_token: string;
   token_type: string;
 }
 
@@ -43,8 +45,9 @@ export async function login(credentials: LoginCredentials): Promise<AuthToken> {
 
   const data: AuthToken = await response.json();
 
-  // Store token and username in localStorage
+  // Store both tokens and username in localStorage
   setToken(data.access_token);
+  setRefreshToken(data.refresh_token);
   setUsername(credentials.username);
 
   return data;
@@ -101,17 +104,59 @@ export async function logout(): Promise<void> {
 }
 
 /**
- * Get stored JWT token from localStorage.
+ * Refresh the access token using the refresh token.
+ */
+export async function refreshAccessToken(): Promise<string> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    throw new Error('No refresh token found');
+  }
+
+  const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+
+  if (!response.ok) {
+    // Refresh token expired or invalid - need to re-login
+    clearAuth();
+    throw new Error('Refresh token expired');
+  }
+
+  const data: { access_token: string; token_type: string } = await response.json();
+  setToken(data.access_token);
+  return data.access_token;
+}
+
+/**
+ * Get stored JWT access token from localStorage.
  */
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
 /**
- * Store JWT token in localStorage.
+ * Store JWT access token in localStorage.
  */
 export function setToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
+}
+
+/**
+ * Get stored refresh token from localStorage.
+ */
+export function getRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+/**
+ * Store refresh token in localStorage.
+ */
+export function setRefreshToken(token: string): void {
+  localStorage.setItem(REFRESH_TOKEN_KEY, token);
 }
 
 /**
@@ -133,6 +178,7 @@ export function setUsername(username: string): void {
  */
 export function clearAuth(): void {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USERNAME_KEY);
 }
 
