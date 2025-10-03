@@ -54,6 +54,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth();
   }, []);
 
+  // Proactively refresh token when user returns to the page
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && isAuthenticated) {
+        // User returned to the page, proactively check and refresh token if needed
+        try {
+          const token = await authApi.ensureValidToken();
+          if (!token) {
+            // Token refresh failed, need to re-login
+            console.warn('Token refresh failed on visibility change, logging out');
+            await logout();
+          }
+        } catch (error) {
+          console.error('Error refreshing token on visibility change', error);
+          await logout();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated]);
+
   const login = async (username: string, password: string) => {
     try {
       await authApi.login({ username, password });

@@ -13,6 +13,7 @@ dependencies = [
     "black>=25.1.0",
     "fastapi>=0.116.1",
     "google-cloud-storage>=2.10.0",
+    "httpx>=0.28.1",
     "mypy>=1.17.1",
     "passlib[bcrypt]>=1.7.4",
     "pre-commit>=4.3.0",

@@ -13,8 +13,8 @@ This is a web application for managing technology risks with a dashboard view an
 # Run the development server
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8008
 
-# Run tests with coverage
-uv run pytest --cov=app --cov-report=html --cov-report=term
+ # Run all unit tests (recommended)
+uv run pytest --ignore=tests/integration -v
 
 # Run specific test file
 uv run pytest tests/test_risks.py -v

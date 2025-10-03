@@ -13,8 +13,8 @@ from app.core.config import settings
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# HTTP Bearer token scheme
-security = HTTPBearer()
+# HTTP Bearer token scheme - auto_error=False to handle 401 ourselves
+security = HTTPBearer(auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -150,7 +150,7 @@ def validate_password_complexity(password: str) -> bool:
     return has_letter and has_number
 
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> str:
     """
     FastAPI dependency to validate JWT token and extract current user.
 
@@ -163,6 +163,13 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     Raises:
         HTTPException: If token is invalid or expired
     """
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     token = credentials.credentials
     payload = decode_access_token(token)
 

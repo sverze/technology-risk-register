@@ -1,8 +1,9 @@
 import type { Risk, DashboardData, DropdownValues, RiskUpdate, PaginatedResponse } from '@/types/risk';
 import type { RiskLogEntry, RiskLogEntryCreate, RiskLogEntryUpdate } from '@/types/riskLogEntry';
-import { getToken, getRefreshToken, refreshAccessToken, clearAuth } from '@/lib/auth';
+import { getToken, getRefreshToken, refreshAccessToken, clearAuth, ensureValidToken } from '@/lib/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const REQUEST_TIMEOUT_MS = 30000; // 30 second timeout
 
 export class ApiError extends Error {
   public status: number;
@@ -14,11 +15,44 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Fetch with timeout support.
+ */
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number = REQUEST_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      throw new ApiError(408, 'Request timeout - please try again');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
-  // Get JWT token from localStorage
-  let token = getToken();
+  // Proactively ensure we have a valid token before making the request
+  let token = await ensureValidToken();
+
+  // If token refresh failed, redirect to login
+  if (!token && getToken()) {
+    // Had a token but couldn't refresh it
+    clearAuth();
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+    throw new ApiError(401, 'Session expired - please log in');
+  }
 
   // Add Authorization header if token exists
   const headers: Record<string, string> = {
@@ -30,12 +64,13 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let response = await fetch(url, {
+  // Make request with timeout
+  let response = await fetchWithTimeout(url, {
     headers,
     ...options,
   });
 
-  // Handle 401 Unauthorized - try to refresh token
+  // Handle 401 Unauthorized - try to refresh token (fallback for edge cases)
   if (response.status === 401 && getRefreshToken()) {
     try {
       // Attempt to refresh the access token
@@ -43,7 +78,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
       // Retry the request with the new token
       headers['Authorization'] = `Bearer ${newToken}`;
-      response = await fetch(url, {
+      response = await fetchWithTimeout(url, {
         headers,
         ...options,
       });

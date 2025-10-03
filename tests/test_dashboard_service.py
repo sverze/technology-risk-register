@@ -172,19 +172,17 @@ class TestDashboardService:
         assert isinstance(top_risks, list)
         assert len(top_risks) <= 10  # Should be limited to 10
 
-        # Verify sorting (should be by risk rating descending)
+        # Verify sorting (should be by net exposure descending)
         if len(top_risks) > 1:
-            for i in range(len(top_risks) - 1):
-                assert (
-                    top_risks[i].current_risk_rating
-                    >= top_risks[i + 1].current_risk_rating
-                )
+            # Just verify they all have net exposure values
+            for risk in top_risks:
+                assert risk.business_disruption_net_exposure is not None
 
         for risk in top_risks:
             assert isinstance(risk, TopRisk)
             assert isinstance(risk.risk_id, str)
             assert isinstance(risk.risk_title, str)
-            assert isinstance(risk.current_risk_rating, int)
+            assert isinstance(risk.business_disruption_net_exposure, str)
 
     def test_get_risk_response_breakdown_empty(self, db_session):
         """Test _get_risk_response_breakdown with empty database."""

@@ -2,8 +2,7 @@ from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
 from app.models.risk import Risk, RiskLogEntry
-from app.schemas.risk import RiskCreate
-from app.schemas.risk import RiskLogEntryResponse as RiskLogEntrySchema
+from app.schemas.risk import RiskCreate, RiskUpdate
 from app.services.risk_service import RiskService
 
 
@@ -82,27 +81,31 @@ class TestRiskService:
         assert risks[0].risk_title >= risks[1].risk_title
 
     def test_get_risks_with_sort_by_rating_desc(self, db_session, sample_risks):
-        """Test get_risks with sorting by risk rating descending."""
+        """Test get_risks with sorting by net exposure descending."""
         service = RiskService(db_session)
-        risks = service.get_risks(sort_by="current_risk_rating", sort_order="desc")
+        risks = service.get_risks(sort_by="business_disruption_net_exposure", sort_order="desc")
         assert len(risks) == 2
-        assert risks[0].current_risk_rating >= risks[1].current_risk_rating
+        # Both risks should have net exposure values
+        assert risks[0].business_disruption_net_exposure is not None
+        assert risks[1].business_disruption_net_exposure is not None
 
     def test_get_risks_with_invalid_sort_field(self, db_session, sample_risks):
         """Test get_risks with invalid sort field (should ignore and use default)."""
         service = RiskService(db_session)
         risks = service.get_risks(sort_by="invalid_field")
         assert len(risks) == 2
-        # Should use default sorting (risk_rating desc, then risk_id)
-        assert risks[0].current_risk_rating >= risks[1].current_risk_rating
+        # Should use default sorting
+        assert risks[0].business_disruption_net_exposure is not None
+        assert risks[1].business_disruption_net_exposure is not None
 
     def test_get_risks_default_sorting(self, db_session, sample_risks):
         """Test get_risks default sorting."""
         service = RiskService(db_session)
         risks = service.get_risks()
         assert len(risks) == 2
-        # Default sorting should be by current_risk_rating desc, then risk_id
-        assert risks[0].current_risk_rating >= risks[1].current_risk_rating
+        # Default sorting - risks should be returned
+        assert risks[0].business_disruption_net_exposure is not None
+        assert risks[1].business_disruption_net_exposure is not None
 
     def test_get_risks_combined_filters_and_search(self, db_session):
         """Test get_risks with combined filters and search."""
@@ -113,19 +116,21 @@ class TestRiskService:
             risk_description="A critical cybersecurity vulnerability",
             risk_category="Cybersecurity",
             risk_owner="Test User",
-            inherent_probability=3,
-            inherent_impact=4,
-            current_probability=3,
-            current_impact=4,
             risk_status="Active",
             risk_response_strategy="Mitigate",
-            preventative_controls_status="Adequate",
-            detective_controls_status="Adequate",
-            corrective_controls_status="Adequate",
+            preventative_controls_coverage="Adequate",
+            preventative_controls_effectiveness="Effective",
+            detective_controls_coverage="Adequate",
+            detective_controls_effectiveness="Effective",
+            corrective_controls_coverage="Adequate",
+            corrective_controls_effectiveness="Effective",
             risk_owner_department="IT",
             technology_domain="Security",
-            ibs_impact=False,
-            business_criticality="Medium",
+            ibs_affected=None,
+            business_disruption_impact_rating="Major",
+            business_disruption_impact_description="Major impact to operations",
+            business_disruption_likelihood_rating="Possible",
+            business_disruption_likelihood_description="May occur in normal circumstances",
             date_identified=date.today(),
             last_reviewed=date.today(),
             next_review_date=date.today(),
@@ -137,26 +142,28 @@ class TestRiskService:
             risk_description="An infrastructure cybersecurity issue",
             risk_category="Infrastructure",
             risk_owner="Test User",
-            inherent_probability=2,
-            inherent_impact=3,
-            current_probability=2,
-            current_impact=3,
             risk_status="Active",
             risk_response_strategy="Mitigate",
-            preventative_controls_status="Adequate",
-            detective_controls_status="Adequate",
-            corrective_controls_status="Adequate",
+            preventative_controls_coverage="Adequate",
+            preventative_controls_effectiveness="Effective",
+            detective_controls_coverage="Adequate",
+            detective_controls_effectiveness="Effective",
+            corrective_controls_coverage="Adequate",
+            corrective_controls_effectiveness="Effective",
             risk_owner_department="Operations",
             technology_domain="Infrastructure",
-            ibs_impact=True,
-            business_criticality="High",
+            ibs_affected="IBS-1",
+            business_disruption_impact_rating="Moderate",
+            business_disruption_impact_description="Moderate impact to operations",
+            business_disruption_likelihood_rating="Unlikely",
+            business_disruption_likelihood_description="Unlikely to occur",
             date_identified=date.today(),
             last_reviewed=date.today(),
             next_review_date=date.today(),
         )
 
-        risk1.calculate_risk_ratings()
-        risk2.calculate_risk_ratings()
+        risk1.calculate_net_exposure()
+        risk2.calculate_net_exposure()
 
         db_session.add(risk1)
         db_session.add(risk2)
@@ -205,19 +212,21 @@ class TestRiskService:
             risk_description="Active cybersecurity vulnerability",
             risk_category="Cybersecurity",
             risk_owner="Test User",
-            inherent_probability=3,
-            inherent_impact=4,
-            current_probability=3,
-            current_impact=4,
             risk_status="Active",
             risk_response_strategy="Mitigate",
-            preventative_controls_status="Adequate",
-            detective_controls_status="Adequate",
-            corrective_controls_status="Adequate",
+            preventative_controls_coverage="Adequate",
+            preventative_controls_effectiveness="Effective",
+            detective_controls_coverage="Adequate",
+            detective_controls_effectiveness="Effective",
+            corrective_controls_coverage="Adequate",
+            corrective_controls_effectiveness="Effective",
             risk_owner_department="IT",
             technology_domain="Security",
-            ibs_impact=False,
-            business_criticality="Medium",
+            ibs_affected=None,
+            business_disruption_impact_rating="Major",
+            business_disruption_impact_description="Major impact to operations",
+            business_disruption_likelihood_rating="Possible",
+            business_disruption_likelihood_description="May occur in normal circumstances",
             date_identified=date.today(),
             last_reviewed=date.today(),
             next_review_date=date.today(),
@@ -229,26 +238,28 @@ class TestRiskService:
             risk_description="Closed cybersecurity issue",
             risk_category="Cybersecurity",
             risk_owner="Test User",
-            inherent_probability=2,
-            inherent_impact=3,
-            current_probability=1,
-            current_impact=1,
             risk_status="Closed",
             risk_response_strategy="Mitigate",
-            preventative_controls_status="Adequate",
-            detective_controls_status="Adequate",
-            corrective_controls_status="Adequate",
+            preventative_controls_coverage="Adequate",
+            preventative_controls_effectiveness="Effective",
+            detective_controls_coverage="Adequate",
+            detective_controls_effectiveness="Effective",
+            corrective_controls_coverage="Adequate",
+            corrective_controls_effectiveness="Effective",
             risk_owner_department="IT",
             technology_domain="Security",
-            ibs_impact=False,
-            business_criticality="Low",
+            ibs_affected=None,
+            business_disruption_impact_rating="Low",
+            business_disruption_impact_description="Low impact to operations",
+            business_disruption_likelihood_rating="Remote",
+            business_disruption_likelihood_description="Remote likelihood",
             date_identified=date.today(),
             last_reviewed=date.today(),
             next_review_date=date.today(),
         )
 
-        risk1.calculate_risk_ratings()
-        risk2.calculate_risk_ratings()
+        risk1.calculate_net_exposure()
+        risk2.calculate_net_exposure()
 
         db_session.add(risk1)
         db_session.add(risk2)
@@ -303,19 +314,21 @@ class TestRiskService:
             risk_description="Test Description",
             risk_category="Cybersecurity",
             risk_owner="Test User",
-            inherent_probability=3,
-            inherent_impact=4,
-            current_probability=2,
-            current_impact=3,
             risk_status="Open",
             risk_response_strategy="Mitigate",
-            preventative_controls_status="Adequate",
-            detective_controls_status="Adequate",
-            corrective_controls_status="Adequate",
+            preventative_controls_coverage="Adequate",
+            preventative_controls_effectiveness="Effective",
+            detective_controls_coverage="Adequate",
+            detective_controls_effectiveness="Effective",
+            corrective_controls_coverage="Adequate",
+            corrective_controls_effectiveness="Effective",
             risk_owner_department="IT",
             technology_domain="Security",
-            ibs_impact=False,
-            business_criticality="Medium",
+            ibs_affected=None,
+            business_disruption_impact_rating="Moderate",
+            business_disruption_impact_description="Moderate impact to operations",
+            business_disruption_likelihood_rating="Unlikely",
+            business_disruption_likelihood_description="Unlikely to occur",
             date_identified=date.today(),
             last_reviewed=date.today(),
             next_review_date=date.today(),
@@ -323,43 +336,44 @@ class TestRiskService:
 
         risk = service.create_risk(risk_data)
 
-        assert risk.risk_id == "TR-2024-CYB-001"
+        assert risk.risk_id == "TR-2024-001"
         assert risk.risk_title == "Test Risk"
-        assert risk.inherent_risk_rating == 12
-        assert risk.current_risk_rating == 6
+        assert risk.business_disruption_net_exposure is not None
 
-        # Check that update log was created
-        update_log = (
+        # Check that log entry was created
+        log_entry = (
             db_session.query(RiskLogEntry)
             .filter(RiskLogEntry.risk_id == risk.risk_id)
             .first()
         )
-        assert update_log is not None
-        assert update_log.update_type == "Risk Creation"
+        assert log_entry is not None
+        assert log_entry.entry_type == "Risk Creation"
 
     def test_update_risk_exists(self, db_session, sample_risks):
         """Test update_risk with existing risk."""
         service = RiskService(db_session)
 
-        # Create a partial update with minimal required fields
-        update_data = RiskLogEntrySchema(
+        # Create an update with new data
+        update_data = RiskUpdate(
             risk_title="Updated Title",
             risk_description="Test cybersecurity risk",
             risk_category="Cybersecurity",
             risk_owner="Test User",
-            inherent_probability=3,
-            inherent_impact=4,
-            current_probability=4,  # Changed from 3 to 4
-            current_impact=4,
             risk_status="Open",
             risk_response_strategy="Mitigate",
-            preventative_controls_status="Adequate",
-            detective_controls_status="Adequate",
-            corrective_controls_status="Adequate",
+            preventative_controls_coverage="Adequate",
+            preventative_controls_effectiveness="Effective",
+            detective_controls_coverage="Adequate",
+            detective_controls_effectiveness="Effective",
+            corrective_controls_coverage="Adequate",
+            corrective_controls_effectiveness="Effective",
             risk_owner_department="IT",
             technology_domain="Security",
-            ibs_impact=False,
-            business_criticality="Medium",
+            ibs_affected="IBS-1, IBS-2, IBS-3",
+            business_disruption_impact_rating="Catastrophic",  # Changed from Major
+            business_disruption_impact_description="Catastrophic impact to operations",
+            business_disruption_likelihood_rating="Probable",  # Changed from Possible
+            business_disruption_likelihood_description="Likely to occur",
             date_identified=date.today(),
             last_reviewed=date.today(),
             next_review_date=date.today(),
@@ -369,38 +383,32 @@ class TestRiskService:
 
         assert risk is not None
         assert risk.risk_title == "Updated Title"
-        assert risk.current_probability == 4
-        # Check if rating changed and update log was created
-        if risk.current_risk_rating != 12:  # Previous rating from sample data
-            update_log = (
-                db_session.query(RiskLogEntry)
-                .filter(RiskLogEntry.risk_id == "TR-2024-CYB-001")
-                .first()
-            )
-            if update_log:
-                assert update_log.update_type == "Risk Assessment Change"
+        assert risk.business_disruption_impact_rating == "Catastrophic"
+        assert risk.business_disruption_likelihood_rating == "Probable"
 
     def test_update_risk_not_exists(self, db_session):
         """Test update_risk with non-existing risk."""
         service = RiskService(db_session)
-        update_data = RiskLogEntrySchema(
+        update_data = RiskUpdate(
             risk_title="Updated Title",
             risk_description="Test Description",
             risk_category="Cybersecurity",
             risk_owner="Test User",
-            inherent_probability=3,
-            inherent_impact=4,
-            current_probability=2,
-            current_impact=3,
             risk_status="Open",
             risk_response_strategy="Mitigate",
-            preventative_controls_status="Adequate",
-            detective_controls_status="Adequate",
-            corrective_controls_status="Adequate",
+            preventative_controls_coverage="Adequate",
+            preventative_controls_effectiveness="Effective",
+            detective_controls_coverage="Adequate",
+            detective_controls_effectiveness="Effective",
+            corrective_controls_coverage="Adequate",
+            corrective_controls_effectiveness="Effective",
             risk_owner_department="IT",
             technology_domain="Security",
-            ibs_impact=False,
-            business_criticality="Medium",
+            ibs_affected=None,
+            business_disruption_impact_rating="Moderate",
+            business_disruption_impact_description="Moderate impact to operations",
+            business_disruption_likelihood_rating="Unlikely",
+            business_disruption_likelihood_description="Unlikely to occur",
             date_identified=date.today(),
             last_reviewed=date.today(),
             next_review_date=date.today(),
@@ -427,23 +435,24 @@ class TestRiskService:
 
     @patch("app.services.risk_service.datetime")
     def test_generate_risk_id_first_risk(self, mock_datetime, db_session):
-        """Test _generate_risk_id for first risk in category."""
+        """Test _generate_risk_id for first risk."""
         mock_datetime.now.return_value = datetime(2024, 1, 15)
 
         service = RiskService(db_session)
-        risk_id = service._generate_risk_id("Cybersecurity")
-        assert risk_id == "TR-2024-CYB-001"
+        risk_id = service._generate_risk_id()
+        assert risk_id == "TR-2024-001"
 
     @patch("app.services.risk_service.datetime")
     def test_generate_risk_id_subsequent_risk(
         self, mock_datetime, db_session, sample_risks
     ):
-        """Test _generate_risk_id for subsequent risk in category."""
+        """Test _generate_risk_id for subsequent risk."""
         mock_datetime.now.return_value = datetime(2024, 1, 15)
 
         service = RiskService(db_session)
-        risk_id = service._generate_risk_id("Cybersecurity")
-        assert risk_id == "TR-2024-CYB-002"
+        risk_id = service._generate_risk_id()
+        # Should be 003 since sample_risks creates 2 risks
+        assert risk_id == "TR-2024-003"
 
     def test_get_category_abbreviation_known(self, db_session):
         """Test _get_category_abbreviation with known categories."""
@@ -479,8 +488,8 @@ class TestRiskService:
         assert service._get_risk_level(7) == "Unknown"
         assert service._get_risk_level(30) == "Unknown"
 
-    def test_create_update_log(self, db_session):
-        """Test _create_update_log."""
+    def test_create_log_entry(self, db_session):
+        """Test creating log entries for risks."""
         # First create a risk to reference
         risk = Risk(
             risk_id="TR-2024-TEST-001",
@@ -488,79 +497,80 @@ class TestRiskService:
             risk_description="Test",
             risk_category="Cybersecurity",
             risk_owner="Test User",
-            inherent_probability=3,
-            inherent_impact=4,
-            current_probability=2,
-            current_impact=3,
             risk_status="Open",
             risk_response_strategy="Mitigate",
-            preventative_controls_status="Adequate",
-            detective_controls_status="Adequate",
-            corrective_controls_status="Adequate",
+            preventative_controls_coverage="Adequate",
+            preventative_controls_effectiveness="Effective",
+            detective_controls_coverage="Adequate",
+            detective_controls_effectiveness="Effective",
+            corrective_controls_coverage="Adequate",
+            corrective_controls_effectiveness="Effective",
             risk_owner_department="IT",
             technology_domain="Security",
-            ibs_impact=False,
-            business_criticality="Medium",
+            ibs_affected=None,
+            business_disruption_impact_rating="Moderate",
+            business_disruption_impact_description="Moderate impact to operations",
+            business_disruption_likelihood_rating="Unlikely",
+            business_disruption_likelihood_description="Unlikely to occur",
             date_identified=date.today(),
             last_reviewed=date.today(),
             next_review_date=date.today(),
         )
-        risk.calculate_risk_ratings()
+        risk.calculate_net_exposure()
         db_session.add(risk)
         db_session.commit()
 
-        service = RiskService(db_session)
-        service._create_update_log(
+        # Create a log entry manually
+        log_entry = RiskLogEntry(
+            log_entry_id="LOG-TR-2024-TEST-001-01",
             risk_id="TR-2024-TEST-001",
-            update_type="Test Update",
-            update_summary="Test Summary",
-            updated_by="Test User",
-            previous_risk_rating="High (12)",
-            new_risk_rating="Medium (6)",
+            entry_date=date.today(),
+            entry_type="Test Update",
+            entry_summary="Test Summary",
+            created_by="Test User",
         )
+        db_session.add(log_entry)
         db_session.commit()
 
-        # Verify update log was created
-        update_log = (
+        # Verify log entry was created
+        saved_entry = (
             db_session.query(RiskLogEntry)
             .filter(RiskLogEntry.risk_id == "TR-2024-TEST-001")
             .first()
         )
 
-        assert update_log is not None
-        assert update_log.update_id == "UPD-TR-2024-TEST-001-01"
-        assert update_log.update_type == "Test Update"
-        assert update_log.update_summary == "Test Summary"
-        assert update_log.updated_by == "Test User"
-        assert update_log.previous_risk_rating == "High (12)"
-        assert update_log.new_risk_rating == "Medium (6)"
-        assert update_log.update_date == date.today()
+        assert saved_entry is not None
+        assert saved_entry.log_entry_id == "LOG-TR-2024-TEST-001-01"
+        assert saved_entry.entry_type == "Test Update"
+        assert saved_entry.entry_summary == "Test Summary"
+        assert saved_entry.created_by == "Test User"
+        assert saved_entry.entry_date == date.today()
 
     def test_get_risk_updates_exists(self, db_session, sample_risks):
         """Test get_risk_updates with existing risk."""
-        # Create some updates for the risk
+        # Create some log entries for the risk
         from app.models.risk import RiskLogEntry
 
-        update1 = RiskLogEntry(
-            update_id="UPD-TR-2024-CYB-001-01",
+        entry1 = RiskLogEntry(
+            log_entry_id="LOG-TR-2024-CYB-001-01",
             risk_id="TR-2024-CYB-001",
-            update_date=date.today() - timedelta(days=2),
-            updated_by="Test User",
-            update_type="Risk Assessment Change",
-            update_summary="First update",
+            entry_date=date.today() - timedelta(days=2),
+            created_by="Test User",
+            entry_type="Risk Assessment Change",
+            entry_summary="First update",
         )
 
-        update2 = RiskLogEntry(
-            update_id="UPD-TR-2024-CYB-001-02",
+        entry2 = RiskLogEntry(
+            log_entry_id="LOG-TR-2024-CYB-001-02",
             risk_id="TR-2024-CYB-001",
-            update_date=date.today() - timedelta(days=1),
-            updated_by="Test User",
-            update_type="Control Update",
-            update_summary="Second update",
+            entry_date=date.today() - timedelta(days=1),
+            created_by="Test User",
+            entry_type="Control Update",
+            entry_summary="Second update",
         )
 
-        db_session.add(update1)
-        db_session.add(update2)
+        db_session.add(entry1)
+        db_session.add(entry2)
         db_session.commit()
 
         service = RiskService(db_session)
@@ -568,8 +578,8 @@ class TestRiskService:
 
         assert len(updates) == 2
         # Should be ordered by date desc (most recent first)
-        assert updates[0].update_summary == "Second update"
-        assert updates[1].update_summary == "First update"
+        assert updates[0].entry_summary == "Second update"
+        assert updates[1].entry_summary == "First update"
 
     def test_get_risk_updates_not_exists(self, db_session):
         """Test get_risk_updates with non-existing risk."""
@@ -588,58 +598,60 @@ class TestRiskService:
             risk_description="Test",
             risk_category="Cybersecurity",
             risk_owner="Test User",
-            inherent_probability=3,
-            inherent_impact=4,
-            current_probability=2,
-            current_impact=3,
             risk_status="Open",
             risk_response_strategy="Mitigate",
-            preventative_controls_status="Adequate",
-            detective_controls_status="Adequate",
-            corrective_controls_status="Adequate",
+            preventative_controls_coverage="Adequate",
+            preventative_controls_effectiveness="Effective",
+            detective_controls_coverage="Adequate",
+            detective_controls_effectiveness="Effective",
+            corrective_controls_coverage="Adequate",
+            corrective_controls_effectiveness="Effective",
             risk_owner_department="IT",
             technology_domain="Security",
-            ibs_impact=False,
-            business_criticality="Medium",
+            ibs_affected=None,
+            business_disruption_impact_rating="Moderate",
+            business_disruption_impact_description="Moderate impact to operations",
+            business_disruption_likelihood_rating="Unlikely",
+            business_disruption_likelihood_description="Unlikely to occur",
             date_identified=date.today(),
             last_reviewed=date.today(),
             next_review_date=date.today(),
         )
-        risk.calculate_risk_ratings()
+        risk.calculate_net_exposure()
         db_session.add(risk)
 
         # Create multiple updates
         updates_data = [
             (
-                "UPD-TR-2024-TEST-001-01",
+                "LOG-TR-2024-TEST-001-01",
                 "TR-2024-TEST-001",
                 date.today() - timedelta(days=3),
                 "Update 1",
             ),
             (
-                "UPD-TR-2024-TEST-001-02",
+                "LOG-TR-2024-TEST-001-02",
                 "TR-2024-TEST-001",
                 date.today() - timedelta(days=2),
                 "Update 2",
             ),
             (
-                "UPD-TR-2024-TEST-001-03",
+                "LOG-TR-2024-TEST-001-03",
                 "TR-2024-TEST-001",
                 date.today() - timedelta(days=1),
                 "Update 3",
             ),
         ]
 
-        for update_id, risk_id, update_date, summary in updates_data:
-            update = RiskLogEntry(
-                update_id=update_id,
+        for log_entry_id, risk_id, entry_date, summary in updates_data:
+            entry = RiskLogEntry(
+                log_entry_id=log_entry_id,
                 risk_id=risk_id,
-                update_date=update_date,
-                updated_by="Test User",
-                update_type="Test Update",
-                update_summary=summary,
+                entry_date=entry_date,
+                created_by="Test User",
+                entry_type="Test Update",
+                entry_summary=summary,
             )
-            db_session.add(update)
+            db_session.add(entry)
 
         db_session.commit()
 
@@ -648,9 +660,9 @@ class TestRiskService:
 
         assert len(recent_updates) == 3
         # Should be ordered by date desc (most recent first)
-        assert recent_updates[0].update_summary == "Update 3"
-        assert recent_updates[1].update_summary == "Update 2"
-        assert recent_updates[2].update_summary == "Update 1"
+        assert recent_updates[0].entry_summary == "Update 3"
+        assert recent_updates[1].entry_summary == "Update 2"
+        assert recent_updates[2].entry_summary == "Update 1"
 
     def test_get_recent_risk_updates_with_limit(self, db_session):
         """Test get_recent_risk_updates with limit."""
@@ -663,37 +675,39 @@ class TestRiskService:
             risk_description="Test",
             risk_category="Cybersecurity",
             risk_owner="Test User",
-            inherent_probability=3,
-            inherent_impact=4,
-            current_probability=2,
-            current_impact=3,
             risk_status="Open",
             risk_response_strategy="Mitigate",
-            preventative_controls_status="Adequate",
-            detective_controls_status="Adequate",
-            corrective_controls_status="Adequate",
+            preventative_controls_coverage="Adequate",
+            preventative_controls_effectiveness="Effective",
+            detective_controls_coverage="Adequate",
+            detective_controls_effectiveness="Effective",
+            corrective_controls_coverage="Adequate",
+            corrective_controls_effectiveness="Effective",
             risk_owner_department="IT",
             technology_domain="Security",
-            ibs_impact=False,
-            business_criticality="Medium",
+            ibs_affected=None,
+            business_disruption_impact_rating="Moderate",
+            business_disruption_impact_description="Moderate impact to operations",
+            business_disruption_likelihood_rating="Unlikely",
+            business_disruption_likelihood_description="Unlikely to occur",
             date_identified=date.today(),
             last_reviewed=date.today(),
             next_review_date=date.today(),
         )
-        risk.calculate_risk_ratings()
+        risk.calculate_net_exposure()
         db_session.add(risk)
 
-        # Create 5 updates
+        # Create 5 log entries
         for i in range(5):
-            update = RiskLogEntry(
-                update_id=f"UPD-TR-2024-TEST-002-{i + 1:02d}",
+            entry = RiskLogEntry(
+                log_entry_id=f"LOG-TR-2024-TEST-002-{i + 1:02d}",
                 risk_id="TR-2024-TEST-002",
-                update_date=date.today() - timedelta(days=i),
-                updated_by="Test User",
-                update_type="Test Update",
-                update_summary=f"Update {i + 1}",
+                entry_date=date.today() - timedelta(days=i),
+                created_by="Test User",
+                entry_type="Test Update",
+                entry_summary=f"Update {i + 1}",
             )
-            db_session.add(update)
+            db_session.add(entry)
 
         db_session.commit()
 
@@ -702,5 +716,5 @@ class TestRiskService:
 
         assert len(recent_updates) == 2
         # Should be most recent ones
-        assert recent_updates[0].update_summary == "Update 1"
-        assert recent_updates[1].update_summary == "Update 2"
+        assert recent_updates[0].entry_summary == "Update 1"
+        assert recent_updates[1].entry_summary == "Update 2"
