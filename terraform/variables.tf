@@ -52,7 +52,36 @@ variable "memory_limit" {
 }
 
 variable "allowed_origins" {
-  description = "Allowed CORS origins"
+  description = "Additional CORS origins (e.g., custom domains). The Load Balancer IP is automatically included."
   type        = list(string)
-  default     = ["*"]
+  default     = []
+}
+
+variable "auth_username" {
+  description = "Username for basic authentication"
+  type        = string
+  default     = "admin"
+  sensitive   = true
+}
+
+variable "auth_password" {
+  description = "Password for basic authentication (REQUIRED - must be set in terraform.tfvars)"
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.auth_password) >= 8
+    error_message = "auth_password must be at least 8 characters long and contain letters and numbers."
+  }
+}
+
+variable "auth_secret_key" {
+  description = "Secret key for JWT token signing (REQUIRED - must be set in terraform.tfvars)"
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.auth_secret_key) >= 32
+    error_message = "auth_secret_key must be at least 32 characters long. Generate with: openssl rand -hex 32"
+  }
 }

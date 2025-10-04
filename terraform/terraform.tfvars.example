@@ -25,3 +25,9 @@ project_id = "your-gcp-project-id"
 
 # Optional: Allowed CORS origins
 # allowed_origins = ["https://your-domain.com", "https://www.your-domain.com"]
+
+# Required: Authentication credentials
+# IMPORTANT: Change these values for production! Do not use defaults.
+auth_username   = "admin"
+auth_password   = "your-secure-password-here"  # Minimum 8 characters with letters and numbers
+auth_secret_key = "your-secret-key-here"       # Generate with: openssl rand -hex 32
