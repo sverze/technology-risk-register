@@ -82,6 +82,9 @@ uv run pre-commit run --all-files
 
 ### Testing
 ```bash
+ # Run all unit tests (recommended)
+uv run pytest --ignore=tests/integration -v
+
 # Run all tests with coverage
 uv run pytest --cov=app --cov-report=html --cov-report=term
 
