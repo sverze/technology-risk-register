@@ -82,7 +82,7 @@ export const ViewRisk: React.FC = () => {
         >
           Back to Risks
         </Button>
-        <Typography variant="h1" sx={{ flexGrow: 1 }}>
+        <Typography variant="h4" sx={{ flexGrow: 1, fontWeight: 600 }}>
           Risk Details
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -220,6 +220,9 @@ export const ViewRisk: React.FC = () => {
               {risk.risk_response_strategy && (
                 <Typography><strong>Response Strategy:</strong> {risk.risk_response_strategy}</Typography>
               )}
+              {risk.planned_mitigations && (
+                <Typography><strong>Planned Mitigations:</strong> {risk.planned_mitigations}</Typography>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -322,23 +325,6 @@ export const ViewRisk: React.FC = () => {
                   )}
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Mitigations */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Risk Mitigation Plan
-              </Typography>
-              {risk.planned_mitigations && (
-                <>
-                  <Typography variant="subtitle2">Planned Mitigations</Typography>
-                  <Typography variant="body2">{risk.planned_mitigations}</Typography>
-                </>
-              )}
             </CardContent>
           </Card>
         </Grid>
