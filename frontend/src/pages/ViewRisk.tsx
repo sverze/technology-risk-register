@@ -82,7 +82,7 @@ export const ViewRisk: React.FC = () => {
         >
           Back to Risks
         </Button>
-        <Typography variant="h1" sx={{ flexGrow: 1 }}>
+        <Typography variant="h4" sx={{ flexGrow: 1, fontWeight: 600 }}>
           Risk Details
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -131,7 +131,7 @@ export const ViewRisk: React.FC = () => {
               <Typography variant="h5" gutterBottom>
                 {risk.risk_title}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                 <Chip label={`ID: ${risk.risk_id}`} size="small" />
                 <Chip label={risk.risk_status} color="primary" size="small" />
                 <Chip label={risk.risk_category} color="secondary" size="small" />
@@ -144,49 +144,65 @@ export const ViewRisk: React.FC = () => {
               <Typography variant="body1" paragraph>
                 {risk.risk_description}
               </Typography>
+              <Box sx={{ display: 'flex', gap: 3, mt: 2, flexWrap: 'wrap' }}>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Date Identified:</strong> {new Date(risk.date_identified).toLocaleDateString()}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Last Reviewed:</strong> {new Date(risk.last_reviewed).toLocaleDateString()}
+                </Typography>
+                {risk.next_review_date && (
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Next Review:</strong> {new Date(risk.next_review_date).toLocaleDateString()}
+                  </Typography>
+                )}
+              </Box>
             </CardContent>
           </Card>
         </Grid>
 
         {/* Business Disruption Assessment */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Business Disruption Assessment
               </Typography>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2">Impact Rating</Typography>
-                <Chip
-                  label={risk.business_disruption_impact_rating}
-                  color={risk.business_disruption_impact_rating === 'Catastrophic' ? 'error' :
-                         risk.business_disruption_impact_rating === 'Major' ? 'warning' :
-                         risk.business_disruption_impact_rating === 'Moderate' ? 'info' : 'success'}
-                  size="small"
-                  sx={{ mb: 1 }}
-                />
-                <Typography variant="body2">{risk.business_disruption_impact_description}</Typography>
-              </Box>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2">Likelihood Rating</Typography>
-                <Chip
-                  label={risk.business_disruption_likelihood_rating}
-                  color={risk.business_disruption_likelihood_rating === 'Probable' ? 'error' :
-                         risk.business_disruption_likelihood_rating === 'Possible' ? 'warning' :
-                         risk.business_disruption_likelihood_rating === 'Unlikely' ? 'info' : 'success'}
-                  size="small"
-                  sx={{ mb: 1 }}
-                />
-                <Typography variant="body2">{risk.business_disruption_likelihood_description}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2">Net Exposure</Typography>
-                <Chip
-                  label={risk.business_disruption_net_exposure}
-                  color={getNetExposureColor(risk.business_disruption_net_exposure)}
-                  size="medium"
-                />
-              </Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="subtitle2">Impact Rating</Typography>
+                  <Chip
+                    label={risk.business_disruption_impact_rating}
+                    color={risk.business_disruption_impact_rating === 'Catastrophic' ? 'error' :
+                           risk.business_disruption_impact_rating === 'Major' ? 'warning' :
+                           risk.business_disruption_impact_rating === 'Moderate' ? 'info' : 'success'}
+                    size="small"
+                    sx={{ mb: 1 }}
+                  />
+                  <Typography variant="body2">{risk.business_disruption_impact_description}</Typography>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="subtitle2">Likelihood Rating</Typography>
+                  <Chip
+                    label={risk.business_disruption_likelihood_rating}
+                    color={risk.business_disruption_likelihood_rating === 'Probable' ? 'error' :
+                           risk.business_disruption_likelihood_rating === 'Possible' ? 'warning' :
+                           risk.business_disruption_likelihood_rating === 'Unlikely' ? 'info' : 'success'}
+                    size="small"
+                    sx={{ mb: 1 }}
+                  />
+                  <Typography variant="body2">{risk.business_disruption_likelihood_description}</Typography>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="subtitle2">Net Exposure</Typography>
+                  <Chip
+                    label={risk.business_disruption_net_exposure}
+                    color={getNetExposureColor(risk.business_disruption_net_exposure)}
+                    size="medium"
+                    sx={{ mb: 1 }}
+                  />
+                </Grid>
+              </Grid>
             </CardContent>
           </Card>
         </Grid>
@@ -204,21 +220,8 @@ export const ViewRisk: React.FC = () => {
               {risk.risk_response_strategy && (
                 <Typography><strong>Response Strategy:</strong> {risk.risk_response_strategy}</Typography>
               )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Timeline */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Timeline
-              </Typography>
-              <Typography><strong>Date Identified:</strong> {new Date(risk.date_identified).toLocaleDateString()}</Typography>
-              <Typography><strong>Last Reviewed:</strong> {new Date(risk.last_reviewed).toLocaleDateString()}</Typography>
-              {risk.next_review_date && (
-                <Typography><strong>Next Review:</strong> {new Date(risk.next_review_date).toLocaleDateString()}</Typography>
+              {risk.planned_mitigations && (
+                <Typography><strong>Planned Mitigations:</strong> {risk.planned_mitigations}</Typography>
               )}
             </CardContent>
           </Card>
@@ -322,23 +325,6 @@ export const ViewRisk: React.FC = () => {
                   )}
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Mitigations */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Risk Mitigation Plan
-              </Typography>
-              {risk.planned_mitigations && (
-                <>
-                  <Typography variant="subtitle2">Planned Mitigations</Typography>
-                  <Typography variant="body2">{risk.planned_mitigations}</Typography>
-                </>
-              )}
             </CardContent>
           </Card>
         </Grid>
