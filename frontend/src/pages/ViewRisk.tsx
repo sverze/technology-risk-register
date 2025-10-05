@@ -149,44 +149,47 @@ export const ViewRisk: React.FC = () => {
         </Grid>
 
         {/* Business Disruption Assessment */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Business Disruption Assessment
               </Typography>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2">Impact Rating</Typography>
-                <Chip
-                  label={risk.business_disruption_impact_rating}
-                  color={risk.business_disruption_impact_rating === 'Catastrophic' ? 'error' :
-                         risk.business_disruption_impact_rating === 'Major' ? 'warning' :
-                         risk.business_disruption_impact_rating === 'Moderate' ? 'info' : 'success'}
-                  size="small"
-                  sx={{ mb: 1 }}
-                />
-                <Typography variant="body2">{risk.business_disruption_impact_description}</Typography>
-              </Box>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2">Likelihood Rating</Typography>
-                <Chip
-                  label={risk.business_disruption_likelihood_rating}
-                  color={risk.business_disruption_likelihood_rating === 'Probable' ? 'error' :
-                         risk.business_disruption_likelihood_rating === 'Possible' ? 'warning' :
-                         risk.business_disruption_likelihood_rating === 'Unlikely' ? 'info' : 'success'}
-                  size="small"
-                  sx={{ mb: 1 }}
-                />
-                <Typography variant="body2">{risk.business_disruption_likelihood_description}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2">Net Exposure</Typography>
-                <Chip
-                  label={risk.business_disruption_net_exposure}
-                  color={getNetExposureColor(risk.business_disruption_net_exposure)}
-                  size="medium"
-                />
-              </Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="subtitle2">Impact Rating</Typography>
+                  <Chip
+                    label={risk.business_disruption_impact_rating}
+                    color={risk.business_disruption_impact_rating === 'Catastrophic' ? 'error' :
+                           risk.business_disruption_impact_rating === 'Major' ? 'warning' :
+                           risk.business_disruption_impact_rating === 'Moderate' ? 'info' : 'success'}
+                    size="small"
+                    sx={{ mb: 1 }}
+                  />
+                  <Typography variant="body2">{risk.business_disruption_impact_description}</Typography>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="subtitle2">Likelihood Rating</Typography>
+                  <Chip
+                    label={risk.business_disruption_likelihood_rating}
+                    color={risk.business_disruption_likelihood_rating === 'Probable' ? 'error' :
+                           risk.business_disruption_likelihood_rating === 'Possible' ? 'warning' :
+                           risk.business_disruption_likelihood_rating === 'Unlikely' ? 'info' : 'success'}
+                    size="small"
+                    sx={{ mb: 1 }}
+                  />
+                  <Typography variant="body2">{risk.business_disruption_likelihood_description}</Typography>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="subtitle2">Net Exposure</Typography>
+                  <Chip
+                    label={risk.business_disruption_net_exposure}
+                    color={getNetExposureColor(risk.business_disruption_net_exposure)}
+                    size="medium"
+                    sx={{ mb: 1 }}
+                  />
+                </Grid>
+              </Grid>
             </CardContent>
           </Card>
         </Grid>
