@@ -131,7 +131,7 @@ export const ViewRisk: React.FC = () => {
               <Typography variant="h5" gutterBottom>
                 {risk.risk_title}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                 <Chip label={`ID: ${risk.risk_id}`} size="small" />
                 <Chip label={risk.risk_status} color="primary" size="small" />
                 <Chip label={risk.risk_category} color="secondary" size="small" />
@@ -144,6 +144,19 @@ export const ViewRisk: React.FC = () => {
               <Typography variant="body1" paragraph>
                 {risk.risk_description}
               </Typography>
+              <Box sx={{ display: 'flex', gap: 3, mt: 2, flexWrap: 'wrap' }}>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Date Identified:</strong> {new Date(risk.date_identified).toLocaleDateString()}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Last Reviewed:</strong> {new Date(risk.last_reviewed).toLocaleDateString()}
+                </Typography>
+                {risk.next_review_date && (
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Next Review:</strong> {new Date(risk.next_review_date).toLocaleDateString()}
+                  </Typography>
+                )}
+              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -206,22 +219,6 @@ export const ViewRisk: React.FC = () => {
               <Typography><strong>Technology Domain:</strong> {risk.technology_domain}</Typography>
               {risk.risk_response_strategy && (
                 <Typography><strong>Response Strategy:</strong> {risk.risk_response_strategy}</Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Timeline */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Timeline
-              </Typography>
-              <Typography><strong>Date Identified:</strong> {new Date(risk.date_identified).toLocaleDateString()}</Typography>
-              <Typography><strong>Last Reviewed:</strong> {new Date(risk.last_reviewed).toLocaleDateString()}</Typography>
-              {risk.next_review_date && (
-                <Typography><strong>Next Review:</strong> {new Date(risk.next_review_date).toLocaleDateString()}</Typography>
               )}
             </CardContent>
           </Card>
