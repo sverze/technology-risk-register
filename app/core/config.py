@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     AUTH_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # Short-lived access tokens
     AUTH_REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # Long-lived refresh tokens
 
+    # Anthropic API (for Risk SME Chat feature)
+    ANTHROPIC_API_KEY: str | None = os.getenv("ANTHROPIC_API_KEY", None)
+
     class Config:
         env_file = ".env"
         case_sensitive = True

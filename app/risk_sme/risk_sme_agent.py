@@ -6,7 +6,10 @@ the Technology Risk Register database. Based on the customer service agent patte
 """
 
 import io
+import json
+import math
 import re
+import statistics
 import sys
 import traceback
 from datetime import date, datetime, timedelta
@@ -41,6 +44,13 @@ Execution Environment (already imported/provided):
   * and_, or_, func  # SQLAlchemy query helpers
   * date, datetime, timedelta  # datetime utilities
   * user_request: str  # the original user question
+
+- Modules available (no import needed):
+  * re - Regular expressions for string parsing/matching
+  * json - JSON encoding/decoding
+  * math - Mathematical functions (sqrt, floor, ceil, etc.)
+  * statistics - Statistical calculations (mean, median, stdev, etc.)
+  * All Python built-ins: len, str, int, float, min, max, sum, sorted, any, all, enumerate, zip, range
 
 - Query Examples:
   ```python
@@ -219,6 +229,31 @@ def execute_generated_code(
         "date": date,
         "datetime": datetime,
         "timedelta": timedelta,
+        # Standard library utilities (safe - no I/O)
+        "re": re,
+        "json": json,
+        "math": math,
+        "statistics": statistics,
+        # Built-in functions for data manipulation
+        "len": len,
+        "str": str,
+        "int": int,
+        "float": float,
+        "bool": bool,
+        "list": list,
+        "dict": dict,
+        "set": set,
+        "tuple": tuple,
+        "min": min,
+        "max": max,
+        "sum": sum,
+        "sorted": sorted,
+        "any": any,
+        "all": all,
+        "enumerate": enumerate,
+        "zip": zip,
+        "range": range,
+        "print": print,
         # User context
         "user_request": user_request or "",
     }
@@ -308,6 +343,71 @@ def risk_sme_agent(
         session=session,
         user_request=question,
     )
+
+    # 3.5) Retry with feedback if first attempt failed
+    if exec_res["error"]:
+        print(f"\n{'⚠' * 80}")
+        print("⚠️  RETRY: First attempt failed, asking LLM to fix the error...")
+        print(f"{'⚠' * 80}\n")
+
+        # Create feedback prompt with error details
+        retry_prompt = f"""Your previous code failed with this error:
+
+```
+{exec_res["error"]}
+```
+
+Original question: {question}
+
+Your failed code:
+```python
+{exec_res["code"]}
+```
+
+Please fix the error and provide corrected code. Common issues:
+- NameError: Module not imported (available modules: re, json, math, statistics)
+- AttributeError: Check field names match the Risk model schema
+- TypeError: Ensure proper type conversions (str to int, date parsing, etc.)
+- Missing null checks: Use `.filter(Risk.field != None)` for null safety
+
+Important reminders:
+- All modules (re, json, math, statistics) are already available - do NOT import them
+- SQLAlchemy queries must use .filter() not raw SQL
+- Always set answer_text, STATUS, and answer_rows variables
+- Use .like() for string matching, .filter() for exact matches
+
+Return ONLY the corrected code in <execute_python> tags."""
+
+        # Generate fixed code
+        print(f"{'━' * 80}")
+        print("🔧 GENERATING FIXED CODE...")
+        print(f"{'━' * 80}\n")
+
+        retry_content = generate_llm_code(
+            retry_prompt,
+            session=session,
+            model=model,
+            temperature=temperature,
+        )
+
+        # Execute fixed code
+        exec_res = execute_generated_code(
+            retry_content,
+            session=session,
+            user_request=question,
+        )
+
+        # Update full_content to include retry attempt
+        full_content = f"{full_content}\n\n---RETRY ATTEMPT---\n\n{retry_content}"
+
+        if exec_res["error"]:
+            print(f"\n{'❌' * 80}")
+            print("❌ RETRY FAILED: Code still has errors after fix attempt")
+            print(f"{'❌' * 80}\n")
+        else:
+            print(f"\n{'✅' * 80}")
+            print("✅ RETRY SUCCEEDED: Fixed code executed successfully!")
+            print(f"{'✅' * 80}\n")
 
     # 4) Show results
     if exec_res["error"]:

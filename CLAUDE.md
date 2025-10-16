@@ -152,3 +152,4 @@ gcloud run services logs tail technology-risk-register --region=us-central1
 - Never commit state files - they contain actual resource identifiers and configuration
 - The server is running on port 8080 not 8008 which is what has come up a few times
 - Run all python unit tests before any commit using 'uv run pytest --ignore=tests/integration -v'
+- The server port is 8080, it is NOT 8008

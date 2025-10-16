@@ -21,6 +21,7 @@ import {
   Dashboard as DashboardIcon,
   List as ListIcon,
   Add as AddIcon,
+  Chat as ChatIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -33,6 +34,7 @@ const navigationItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { text: 'Risk List', icon: <ListIcon />, path: '/risks' },
   { text: 'Add Risk', icon: <AddIcon />, path: '/risks/new' },
+  { text: 'Risk Chat', icon: <ChatIcon />, path: '/chat' },
 ];
 
 const DRAWER_WIDTH = 280;
