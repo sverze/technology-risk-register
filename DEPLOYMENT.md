@@ -165,6 +165,12 @@ Configure these in `terraform/terraform.tfvars`:
 # Required
 project_id = "your-gcp-project-id"
 
+# Required: Authentication & API Keys
+auth_username = "admin"
+auth_password = "your-secure-password-here"     # Minimum 8 characters
+auth_secret_key = "your-secret-key-here"         # Generate with: openssl rand -hex 32
+anthropic_api_key = "sk-ant-api03-your-key-here" # Get from: https://console.anthropic.com/settings/keys
+
 # Optional
 region = "us-central1"
 app_name = "tech-risk-register"

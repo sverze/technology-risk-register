@@ -74,6 +74,9 @@ venv.bak/
 profile_default/
 ipython_config.py
 
+# HTML output from utils.print_html() (aisuite customer agent)
+output_html/
+
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
 #   intended to run in multiple environments; otherwise, check them in:

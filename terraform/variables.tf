@@ -85,3 +85,14 @@ variable "auth_secret_key" {
     error_message = "auth_secret_key must be at least 32 characters long. Generate with: openssl rand -hex 32"
   }
 }
+
+variable "anthropic_api_key" {
+  description = "Anthropic API key for Claude (REQUIRED for Risk SME Chat feature - must be set in terraform.tfvars)"
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = can(regex("^sk-ant-", var.anthropic_api_key))
+    error_message = "anthropic_api_key must start with 'sk-ant-'. Get your key from: https://console.anthropic.com/settings/keys"
+  }
+}

@@ -319,3 +319,35 @@ export const healthApi = {
     return response.json();
   },
 };
+
+// Chat API types
+export interface ChatRequest {
+  question: string;
+  model?: string;
+  temperature?: number;
+  show_code?: boolean;
+}
+
+export interface ChatResponse {
+  answer: string;
+  status: 'success' | 'no_results' | 'invalid_request' | 'error';
+  answer_rows?: Array<Record<string, any>> | null;
+  code?: string | null;
+  error?: string | null;
+  execution_log?: string | null;
+}
+
+export const chatApi = {
+  // Send a chat message to the Risk SME agent
+  sendMessage: async (request: ChatRequest): Promise<ChatResponse> => {
+    return apiRequest<ChatResponse>('/chat/', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  },
+
+  // Health check for chat service
+  getChatHealth: async (): Promise<{ status: string; service: string; message: string }> => {
+    return apiRequest<{ status: string; service: string; message: string }>('/chat/health');
+  },
+};

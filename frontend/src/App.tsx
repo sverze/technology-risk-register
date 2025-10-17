@@ -5,6 +5,7 @@ import { RiskList } from '@/pages/RiskList';
 import { AddRisk } from '@/pages/AddRisk';
 import { ViewRisk } from '@/pages/ViewRisk';
 import { EditRisk } from '@/pages/EditRisk';
+import { RiskChat } from '@/pages/RiskChat';
 import { Login } from '@/pages/Login';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { Box, CircularProgress } from '@mui/material';
@@ -84,6 +85,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <MainLayout>
               <EditRisk />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <RiskChat />
             </MainLayout>
           </ProtectedRoute>
         }

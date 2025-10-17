@@ -6,6 +6,7 @@ A modern web application for managing technology risks with executive dashboard 
 
 - **Risk Management**: Complete CRUD operations for technology risks
 - **Executive Dashboard**: Real-time metrics and visualizations for decision makers
+- **AI-Powered Risk Chat**: Natural language interface to query risks using Claude (Anthropic)
 - **Audit Trail**: Full history tracking of risk changes
 - **Intelligent Prioritization**: Smart risk sorting by rating, financial impact, and business service impact
 - **Serverless Ready**: SQLite + Cloud Storage architecture for cost-effective GCP deployment
@@ -57,13 +58,27 @@ A modern web application for managing technology risks with executive dashboard 
 
 ### Docker Development
 
-1. **Build and run with Docker Compose**
+1. **Set up environment variables** (required for Risk SME Chat)
+   ```bash
+   # Copy the example file
+   cp .env.example .env
+
+   # Edit .env and add your Anthropic API key
+   # Get your key from: https://console.anthropic.com/settings/keys
+   nano .env
+   ```
+
+   📖 **[Environment Setup Guide](./ENV_SETUP.md)** - Detailed instructions for configuring API keys and secrets
+
+2. **Build and run with Docker Compose**
    ```bash
    docker-compose up --build
    ```
 
-2. **Access the application**
-   - API: http://localhost:8000
+3. **Access the application**
+   - API: http://localhost:8080
+   - Frontend: http://localhost:3000
+   - API Documentation: http://localhost:8080/docs
 
 ## Development Commands
 
@@ -161,6 +176,11 @@ uv run alembic downgrade -1
 - `GET /api/v1/risks/{risk_id}` - Get specific risk
 - `PUT /api/v1/risks/{risk_id}` - Update risk
 - `DELETE /api/v1/risks/{risk_id}` - Delete risk
+
+### Risk SME Chat (AI-Powered)
+- `POST /api/v1/chat/` - Ask natural language questions about risks
+- `GET /api/v1/chat/health` - Check chat service health
+- **Requires**: `ANTHROPIC_API_KEY` environment variable
 
 ### Dashboard
 - `GET /api/v1/dashboard/` - Get complete dashboard data
