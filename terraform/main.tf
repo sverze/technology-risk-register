@@ -9,7 +9,7 @@ resource "google_project_service" "required_apis" {
     "compute.googleapis.com"
   ])
 
-  service = each.value
+  service            = each.value
   disable_on_destroy = false
 }
 
@@ -30,7 +30,7 @@ resource "google_storage_bucket" "database_bucket" {
 
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
-  force_destroy = true  # Allow deletion even with objects
+  force_destroy               = true # Allow deletion even with objects
 
   versioning {
     enabled = true
@@ -38,7 +38,7 @@ resource "google_storage_bucket" "database_bucket" {
 
   lifecycle_rule {
     condition {
-      age = 30
+      age                = 30
       num_newer_versions = 5
     }
     action {
@@ -56,12 +56,12 @@ resource "google_storage_bucket" "assets_bucket" {
 
   uniform_bucket_level_access = true
   public_access_prevention    = "inherited"
-  force_destroy = true  # Allow deletion even with objects
+  force_destroy               = true # Allow deletion even with objects
 
   # Enable website hosting
   website {
     main_page_suffix = "index.html"
-    not_found_page   = "index.html"  # For SPA routing
+    not_found_page   = "index.html" # For SPA routing
   }
 
   # CORS configuration for frontend assets
@@ -108,12 +108,12 @@ resource "google_compute_backend_bucket" "frontend_backend" {
   enable_cdn  = true
 
   cdn_policy {
-    cache_mode                   = "CACHE_ALL_STATIC"
-    default_ttl                  = 3600
-    max_ttl                      = 86400
-    client_ttl                   = 3600
-    negative_caching             = true
-    serve_while_stale            = 86400
+    cache_mode        = "CACHE_ALL_STATIC"
+    default_ttl       = 3600
+    max_ttl           = 86400
+    client_ttl        = 3600
+    negative_caching  = true
+    serve_while_stale = 86400
   }
 
   depends_on = [google_project_service.required_apis]
@@ -305,7 +305,12 @@ resource "google_cloud_run_v2_service" "app" {
       }
 
       env {
-        name  = "ALLOWED_ORIGINS"
+        name  = "ANTHROPIC_API_KEY"
+        value = var.anthropic_api_key
+      }
+
+      env {
+        name = "ALLOWED_ORIGINS"
         value = jsonencode(concat(
           [
             "http://${google_compute_global_forwarding_rule.frontend_http.ip_address}",
