@@ -210,6 +210,36 @@ The dashboard provides 9 key components:
 8. Risk Management Activity
 9. Business Service Risk Exposure
 
+## CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment.
+
+### Pull Request Validation (CI)
+When you open a pull request, the following checks run automatically:
+- **Backend**: Black format check, Ruff linting, MyPy type checking, pytest with 90% coverage
+- **Frontend**: ESLint, TypeScript type checking
+- **Build Verification**: Docker image build, frontend build
+
+All checks must pass before merging to `main`.
+
+### Automated Deployment (CD)
+On push to `main` branch, the pipeline:
+1. Runs all quality checks and tests
+2. Builds and pushes Docker image to `ghcr.io/sverze/technology-risk-register`
+3. Builds frontend and uploads as artifact
+4. Triggers Harness deployment webhook with metadata
+
+**Manual Deployment:**
+You can trigger builds manually from the GitHub Actions UI with optional environment selection (production/staging).
+
+**Container Registry:**
+- Backend images: `ghcr.io/sverze/technology-risk-register:latest`
+- Tagged with commit SHA: `ghcr.io/sverze/technology-risk-register:main-abc1234`
+
+**Setup Requirements:**
+1. GitHub Settings → Actions → Workflow permissions → "Read and write permissions"
+2. Add repository secret: `HARNESS_WEBHOOK_URL` (for automated deployments)
+
 ## Deployment
 
 ### Local Development

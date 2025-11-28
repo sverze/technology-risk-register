@@ -39,7 +39,7 @@ class TestChatEndpoint:
             json={"question": ""},
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422  # FastAPI validation error
 
     def test_chat_with_show_code_true(self, client, dashboard_sample_risks):
         """Test chat endpoint returns code when show_code=True."""

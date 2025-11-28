@@ -153,3 +153,4 @@ gcloud run services logs tail technology-risk-register --region=us-central1
 - The server is running on port 8080 not 8008 which is what has come up a few times
 - Run all python unit tests before any commit using 'uv run pytest --ignore=tests/integration -v'
 - The server port is 8080, it is NOT 8008
+- The Git SSH config you must use is github.com-personal, prepend this on all interactions with GitHub
