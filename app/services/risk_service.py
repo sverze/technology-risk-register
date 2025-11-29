@@ -95,9 +95,9 @@ class RiskService:
             entry_type="Risk Creation",
             entry_summary="Risk initially created in the system",
             created_by=risk_data.risk_owner,
-            new_net_exposure=db_risk.business_disruption_net_exposure,
-            new_impact_rating=db_risk.business_disruption_impact_rating,
-            new_likelihood_rating=db_risk.business_disruption_likelihood_rating,
+            new_net_exposure=str(db_risk.business_disruption_net_exposure),
+            new_impact_rating=str(db_risk.business_disruption_impact_rating),
+            new_likelihood_rating=str(db_risk.business_disruption_likelihood_rating),
             risk_owner_at_time=risk_data.risk_owner,
         )
         self.db.commit()
@@ -120,7 +120,7 @@ class RiskService:
 
         # Recalculate net exposure
         db_risk.calculate_net_exposure()
-        db_risk.updated_at = datetime.utcnow()
+        db_risk.updated_at = datetime.utcnow()  # type: ignore[assignment]
 
         # Create log entry if net exposure changed
         if db_risk.business_disruption_net_exposure != previous_exposure:
@@ -131,12 +131,14 @@ class RiskService:
                     f"Net exposure changed from {previous_exposure} to {db_risk.business_disruption_net_exposure} via direct risk update"
                 ),
                 created_by=risk_data.risk_owner,
-                previous_net_exposure=previous_exposure,
-                new_net_exposure=db_risk.business_disruption_net_exposure,
-                previous_impact_rating=db_risk.business_disruption_impact_rating,  # Note: we don't track previous values in direct updates
-                new_impact_rating=db_risk.business_disruption_impact_rating,
-                previous_likelihood_rating=db_risk.business_disruption_likelihood_rating,
-                new_likelihood_rating=db_risk.business_disruption_likelihood_rating,
+                previous_net_exposure=str(previous_exposure),
+                new_net_exposure=str(db_risk.business_disruption_net_exposure),
+                previous_impact_rating=str(
+                    db_risk.business_disruption_impact_rating
+                ),  # Note: we don't track previous values in direct updates
+                new_impact_rating=str(db_risk.business_disruption_impact_rating),
+                previous_likelihood_rating=str(db_risk.business_disruption_likelihood_rating),
+                new_likelihood_rating=str(db_risk.business_disruption_likelihood_rating),
                 risk_owner_at_time=risk_data.risk_owner,
                 entry_status="Approved",  # Direct risk updates are auto-approved
             )
@@ -269,13 +271,13 @@ class RiskService:
         if current_risk:
             # Auto-populate previous values if not provided
             if log_entry_data.previous_net_exposure is None:
-                log_entry_data.previous_net_exposure = current_risk.business_disruption_net_exposure
+                log_entry_data.previous_net_exposure = str(current_risk.business_disruption_net_exposure)  # type: ignore[assignment]
             if log_entry_data.previous_impact_rating is None:
-                log_entry_data.previous_impact_rating = current_risk.business_disruption_impact_rating
+                log_entry_data.previous_impact_rating = str(current_risk.business_disruption_impact_rating)  # type: ignore[assignment]
             if log_entry_data.previous_likelihood_rating is None:
-                log_entry_data.previous_likelihood_rating = current_risk.business_disruption_likelihood_rating
+                log_entry_data.previous_likelihood_rating = str(current_risk.business_disruption_likelihood_rating)  # type: ignore[assignment]
             if log_entry_data.risk_owner_at_time is None:
-                log_entry_data.risk_owner_at_time = current_risk.risk_owner
+                log_entry_data.risk_owner_at_time = str(current_risk.risk_owner)  # type: ignore[assignment]
 
         db_log_entry = RiskLogEntry(log_entry_id=log_entry_id, **log_entry_data.dict())
 
@@ -321,9 +323,9 @@ class RiskService:
             return None
 
         # Update approval status
-        db_log_entry.entry_status = "Approved"
-        db_log_entry.reviewed_by = reviewed_by
-        db_log_entry.approved_date = date.today()
+        db_log_entry.entry_status = "Approved"  # type: ignore[assignment]
+        db_log_entry.reviewed_by = reviewed_by  # type: ignore[assignment]
+        db_log_entry.approved_date = date.today()  # type: ignore[assignment]
 
         # Apply the rating changes to the parent risk
         db_log_entry.update_parent_risk_rating()
@@ -340,9 +342,9 @@ class RiskService:
             return None
 
         # Update rejection status
-        db_log_entry.entry_status = "Rejected"
-        db_log_entry.reviewed_by = reviewed_by
-        db_log_entry.approved_date = date.today()  # Date of decision
+        db_log_entry.entry_status = "Rejected"  # type: ignore[assignment]
+        db_log_entry.reviewed_by = reviewed_by  # type: ignore[assignment]
+        db_log_entry.approved_date = date.today()  # type: ignore[assignment]  # Date of decision
 
         self.db.commit()
         self.db.refresh(db_log_entry)

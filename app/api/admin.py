@@ -95,9 +95,9 @@ def filesystem_diagnostic() -> dict[str, Any]:
                 tables = [row[0] for row in cursor.fetchall()]
                 conn.close()
                 db_info["sqlite_connection_test"] = True
-                db_info["tables"] = tables
+                db_info["tables"] = tables  # type: ignore[assignment]
             except Exception as e:
-                db_info["sqlite_error"] = str(e)
+                db_info["sqlite_error"] = str(e)  # type: ignore[assignment]
 
         # Environment info
         env_info = {

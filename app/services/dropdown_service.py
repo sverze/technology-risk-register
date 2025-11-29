@@ -15,7 +15,7 @@ class DropdownService:
         if category:
             query = query.filter(DropdownValue.category == category)
 
-        return query.order_by(DropdownValue.display_order, DropdownValue.value).all()
+        return query.order_by(DropdownValue.display_order, DropdownValue.value).all()  # type: ignore[return-value]
 
     def get_dropdown_categories(self) -> list[str]:
         """Get all available dropdown categories."""
@@ -42,10 +42,11 @@ class DropdownService:
         dropdown_values = query.order_by(DropdownValue.category, DropdownValue.display_order, DropdownValue.value).all()
 
         # Group by category
-        result = {}
+        result: dict[str, list[DropdownValueSchema]] = {}
         for dropdown_value in dropdown_values:
-            if dropdown_value.category not in result:
-                result[dropdown_value.category] = []
-            result[dropdown_value.category].append(dropdown_value)
+            cat = str(dropdown_value.category)
+            if cat not in result:
+                result[cat] = []
+            result[cat].append(dropdown_value)  # type: ignore[arg-type]
 
         return result

@@ -172,7 +172,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials | None = De
     token = credentials.credentials
     payload = decode_access_token(token)
 
-    username: str = payload.get("sub")
+    username: str | None = payload.get("sub")
     if username is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

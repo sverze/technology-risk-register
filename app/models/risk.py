@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -13,7 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-Base = declarative_base()
+Base: Any = declarative_base()
 
 
 class Risk(Base):
@@ -108,8 +109,8 @@ class Risk(Base):
             (4, 4): 16,  # Catastrophic-Probable
         }
 
-        impact_val = impact_values.get(self.business_disruption_impact_rating, 1)
-        likelihood_val = likelihood_values.get(self.business_disruption_likelihood_rating, 1)
+        impact_val = impact_values.get(str(self.business_disruption_impact_rating), 1)
+        likelihood_val = likelihood_values.get(str(self.business_disruption_likelihood_rating), 1)
 
         exposure_number = matrix.get((impact_val, likelihood_val), 1)
 
@@ -123,7 +124,7 @@ class Risk(Base):
         else:
             category = "Critical"
 
-        self.business_disruption_net_exposure = f"{category} ({exposure_number})"
+        self.business_disruption_net_exposure = f"{category} ({exposure_number})"  # type: ignore[assignment]
 
 
 class RiskLogEntry(Base):
@@ -177,16 +178,16 @@ class RiskLogEntry(Base):
         if self.entry_status == "Approved":
             # Update the risk's business disruption rating fields
             if self.new_impact_rating is not None:
-                self.risk.business_disruption_impact_rating = self.new_impact_rating
+                self.risk.business_disruption_impact_rating = self.new_impact_rating  # type: ignore[assignment]
             if self.new_likelihood_rating is not None:
-                self.risk.business_disruption_likelihood_rating = self.new_likelihood_rating
+                self.risk.business_disruption_likelihood_rating = self.new_likelihood_rating  # type: ignore[assignment]
 
             # Recalculate net exposure if either rating changed
             if self.new_impact_rating is not None or self.new_likelihood_rating is not None:
                 self.risk.calculate_net_exposure()
 
             # Update the last reviewed date to the entry date
-            self.risk.last_reviewed = self.entry_date
+            self.risk.last_reviewed = self.entry_date  # type: ignore[assignment]
 
 
 class DropdownValue(Base):

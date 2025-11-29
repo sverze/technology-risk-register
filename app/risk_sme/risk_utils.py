@@ -104,11 +104,12 @@ def get_dropdown_values(session: Session) -> dict[str, list[str]]:
         .all()
     )
 
-    categories = {}
+    categories: dict[str, list[str]] = {}
     for dv in dropdown_values:
-        if dv.category not in categories:
-            categories[dv.category] = []
-        categories[dv.category].append(dv.value)
+        cat = str(dv.category)
+        if cat not in categories:
+            categories[cat] = []
+        categories[cat].append(str(dv.value))
 
     return categories
 

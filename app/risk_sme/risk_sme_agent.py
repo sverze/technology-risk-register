@@ -175,7 +175,7 @@ def generate_llm_code(
             {"role": "user", "content": full_prompt},
         ],
     )
-    content = resp.content[0].text or ""
+    content = resp.content[0].text or ""  # type: ignore[union-attr]
 
     return content
 
@@ -257,7 +257,7 @@ def execute_generated_code(
         # User context
         "user_request": user_request or "",
     }
-    SAFE_LOCALS = {}
+    SAFE_LOCALS: dict[str, object] = {}
 
     # Capture stdout from the executed code
     _stdout_buf, _old_stdout = io.StringIO(), sys.stdout

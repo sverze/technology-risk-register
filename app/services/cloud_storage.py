@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class CloudStorageService:
     """Service for managing database files in Google Cloud Storage."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client: storage.Client | None = None
         self.bucket_name = settings.GCP_BUCKET_NAME
         self.project_id = settings.GCP_PROJECT_ID
@@ -103,7 +103,7 @@ class CloudStorageService:
         try:
             import signal
 
-            def timeout_handler(signum, frame):
+            def timeout_handler(signum: int, frame: object) -> None:
                 raise TimeoutError(f"Cloud Storage sync timed out after {timeout_seconds}s")
 
             # Set timeout

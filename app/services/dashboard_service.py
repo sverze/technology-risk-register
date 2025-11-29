@@ -1,9 +1,10 @@
 import re
 from datetime import date, timedelta
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import and_, func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from app.models.risk import Risk, RiskLogEntry
 from app.schemas.dashboard import (
@@ -51,15 +52,15 @@ class DashboardService:
             business_service_exposure=self._get_business_service_exposure(active_risks),
         )
 
-    def _get_active_risks_query(self):
+    def _get_active_risks_query(self) -> Query[Any]:
         """Get query for active risks."""
         return self.db.query(Risk).filter(or_(Risk.risk_status == "Active", Risk.risk_status == "Monitoring"))
 
-    def _get_total_active_risks(self, active_risks) -> int:
+    def _get_total_active_risks(self, active_risks: Query[Any]) -> int:
         """Get total count of active risks."""
-        return active_risks.count()
+        return active_risks.count()  # type: ignore[no-any-return]
 
-    def _get_critical_high_risk_count(self, active_risks) -> int:
+    def _get_critical_high_risk_count(self, active_risks: Query[Any]) -> int:
         """Get count of critical/high risks based on net exposure."""
         # Count risks with Critical or High net exposure
         return active_risks.filter(
@@ -67,7 +68,7 @@ class DashboardService:
                 Risk.business_disruption_net_exposure.like("%Critical%"),
                 Risk.business_disruption_net_exposure.like("%High%"),
             )
-        ).count()
+        ).count()  # type: ignore[no-any-return]
 
     def _get_risk_trend_change(self) -> float:
         """Calculate month-over-month risk trend change."""
@@ -79,7 +80,7 @@ class DashboardService:
         # For now, return 0 as baseline
         return 0.0
 
-    def _get_risk_severity_distribution(self, active_risks) -> RiskSeverityDistribution:
+    def _get_risk_severity_distribution(self, active_risks: Query[Any]) -> RiskSeverityDistribution:
         """Get risk distribution by Business Disruption net exposure levels."""
         critical = active_risks.filter(Risk.business_disruption_net_exposure.like("%Critical%")).count()
 
@@ -91,13 +92,13 @@ class DashboardService:
 
         return RiskSeverityDistribution(critical=critical, high=high, medium=medium, low=low)
 
-    def _get_technology_domain_risks(self, active_risks) -> list[TechnologyDomainRisk]:
+    def _get_technology_domain_risks(self, active_risks: Query[Any]) -> list[TechnologyDomainRisk]:
         """Get risk count and average net exposure score by technology domain."""
         # Get all risks grouped by domain
         all_risks = active_risks.all()
 
         # Group by domain and calculate averages
-        domain_data = {}
+        domain_data: dict[str, list[int]] = {}
         for risk in all_risks:
             domain = risk.technology_domain
             if domain not in domain_data:
@@ -125,7 +126,7 @@ class DashboardService:
 
         return final_results
 
-    def _get_control_posture(self, active_risks) -> ControlPosture:
+    def _get_control_posture(self, active_risks: Query[Any]) -> ControlPosture:
         """Get control posture statistics based on new coverage/effectiveness model."""
         total_risks = active_risks.count()
         if total_risks == 0:
@@ -177,7 +178,7 @@ class DashboardService:
             risks_with_control_gaps=control_gaps,
         )
 
-    def _get_top_priority_risks(self, active_risks) -> list[TopRisk]:
+    def _get_top_priority_risks(self, active_risks: Query[Any]) -> list[TopRisk]:
         """Get top 10 highest priority risks with intelligent sorting based on net exposure."""
         risks = (
             active_risks.order_by(
@@ -201,7 +202,7 @@ class DashboardService:
             for risk in risks
         ]
 
-    def _get_risk_response_breakdown(self, active_risks) -> RiskResponseBreakdown:
+    def _get_risk_response_breakdown(self, active_risks: Query[Any]) -> RiskResponseBreakdown:
         """Get risk response strategy breakdown."""
         mitigate = active_risks.filter(Risk.risk_response_strategy == "Mitigate").count()
         accept = active_risks.filter(Risk.risk_response_strategy == "Accept").count()
@@ -210,21 +211,21 @@ class DashboardService:
 
         return RiskResponseBreakdown(mitigate=mitigate, accept=accept, transfer=transfer, avoid=avoid)
 
-    def _get_total_financial_exposure(self, active_risks) -> Decimal:
+    def _get_total_financial_exposure(self, active_risks: Query[Any]) -> Decimal:
         """Get total financial exposure (sum of high estimates)."""
         result = active_risks.with_entities(func.sum(Risk.financial_impact_high)).scalar()
 
         return result if result else Decimal("0.00")
 
-    def _get_average_financial_impact(self, active_risks) -> Decimal:
+    def _get_average_financial_impact(self, active_risks: Query[Any]) -> Decimal:
         """Get average financial impact per risk."""
         result = active_risks.with_entities(func.avg(Risk.financial_impact_high)).scalar()
 
         return Decimal(str(result)) if result else Decimal("0.00")
 
-    def _get_high_financial_impact_risks(self, active_risks) -> int:
+    def _get_high_financial_impact_risks(self, active_risks: Query[Any]) -> int:
         """Get count of risks with financial impact > $1M."""
-        return active_risks.filter(Risk.financial_impact_high > 1000000).count()
+        return active_risks.filter(Risk.financial_impact_high > 1000000).count()  # type: ignore[no-any-return]
 
     def _get_risk_management_activity(self) -> RiskManagementActivity:
         """Get risk management activity metrics."""
@@ -255,12 +256,12 @@ class DashboardService:
             recent_risk_rating_changes=recent_changes,
         )
 
-    def _get_business_service_exposure(self, active_risks) -> BusinessServiceExposure:
+    def _get_business_service_exposure(self, active_risks: Query[Any]) -> BusinessServiceExposure:
         """Get business service exposure metrics based on new IBS affected field."""
         total_active = active_risks.count()
 
         # Risks affecting IBS (now a text field, check for non-empty values)
-        ibs_risks = active_risks.filter(and_(Risk.ibs_affected is not None, Risk.ibs_affected != ""))
+        ibs_risks = active_risks.filter(and_(Risk.ibs_affected.isnot(None), Risk.ibs_affected != ""))  # type: ignore[arg-type]
         ibs_risk_count = ibs_risks.count()
 
         # For total IBS affected, we'll estimate based on the count since it's now text

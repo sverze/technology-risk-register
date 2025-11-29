@@ -135,7 +135,7 @@ async def refresh_access_token(request: RefreshRequest) -> AccessTokenResponse:
     """
     # Decode and validate refresh token
     payload = decode_refresh_token(request.refresh_token)
-    username: str = payload.get("sub")
+    username: str | None = payload.get("sub")
 
     if username is None:
         raise HTTPException(

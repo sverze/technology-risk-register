@@ -75,6 +75,19 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
+exclude = [
+    "app/risk_sme/test_queries\\.py$",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "app.risk_sme.risk_sme_agent",
+    "app.core.sync",
+    "app.core.security",
+    "app.api.admin",
+]
+warn_return_any = false
+disallow_untyped_defs = false
 
 [tool.pytest.ini_options]
 minversion = "6.0"

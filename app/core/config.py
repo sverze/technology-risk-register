@@ -25,13 +25,14 @@ class Settings(BaseSettings):
 
     @field_validator("ALLOWED_ORIGINS")
     @classmethod
-    def parse_cors_origins(cls, v):
+    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
         if isinstance(v, str):
             # Handle wildcard for all origins
             if v == "*":
                 return ["*"]
             try:
-                return json.loads(v)
+                parsed: list[str] = json.loads(v)
+                return parsed
             except json.JSONDecodeError:
                 # Handle gcloud alternate delimiter format (^;^value1;value2)
                 if v.startswith("^;^"):

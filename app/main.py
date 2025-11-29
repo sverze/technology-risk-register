@@ -26,7 +26,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
 @app.on_event("startup")
-def startup_event():
+def startup_event() -> None:
     """Initialize database on startup."""
     import logging
 
@@ -71,7 +71,7 @@ def root() -> dict[str, str]:
 
 
 @app.on_event("shutdown")
-def shutdown_event():
+def shutdown_event() -> None:
     """Shutdown cleanup - database persisted via Cloud Storage mount."""
     import logging
 
