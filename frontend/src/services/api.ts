@@ -331,7 +331,8 @@ export interface ChatRequest {
 export interface ChatResponse {
   answer: string;
   status: 'success' | 'no_results' | 'invalid_request' | 'error';
-  answer_rows?: Array<Record<string, unknown>> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  answer_rows?: Array<Record<string, any>> | null;
   code?: string | null;
   error?: string | null;
   execution_log?: string | null;

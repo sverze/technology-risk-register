@@ -2,13 +2,34 @@ import { Card, CardContent, Typography, Chip, Box, IconButton, Tooltip } from '@
 import { Visibility as ViewIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
-interface RiskResultCardProps {
-  risk: Record<string, unknown>;
+interface RiskData {
+  risk_id?: string;
+  id?: string;
+  riskId?: string;
+  risk_title?: string;
+  title?: string;
+  name?: string;
+  risk_category?: string;
+  category?: string;
+  risk_status?: string;
+  status?: string;
+  risk_owner?: string;
+  owner?: string;
+  business_disruption_net_exposure?: string;
+  exposure?: string;
+  net_exposure?: string;
+  technology_domain?: string;
+  domain?: string;
+  [key: string]: unknown;  // Allow additional properties
 }
 
-const getNetExposureColor = (exposure: string): 'error' | 'warning' | 'info' | 'success' | 'default' => {
+interface RiskResultCardProps {
+  risk: RiskData;
+}
+
+const getNetExposureColor = (exposure?: string): 'error' | 'warning' | 'info' | 'success' | 'default' => {
   if (!exposure) return 'default';
-  const exposureStr = exposure.toString().toLowerCase();
+  const exposureStr = exposure.toLowerCase();
   if (exposureStr.includes('critical')) return 'error';
   if (exposureStr.includes('high')) return 'warning';
   if (exposureStr.includes('medium')) return 'info';

@@ -69,6 +69,8 @@ jobs:
         run: uv sync
 
       - name: Run tests with coverage
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: uv run pytest --ignore=tests/integration -v --cov=app --cov-report=term-missing --cov-fail-under=65
 
       - name: Upload coverage report
