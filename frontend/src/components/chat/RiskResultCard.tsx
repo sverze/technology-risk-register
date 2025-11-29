@@ -3,7 +3,7 @@ import { Visibility as ViewIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 interface RiskResultCardProps {
-  risk: Record<string, any>;
+  risk: Record<string, unknown>;
 }
 
 const getNetExposureColor = (exposure: string): 'error' | 'warning' | 'info' | 'success' | 'default' => {

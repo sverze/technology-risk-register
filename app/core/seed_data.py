@@ -76,9 +76,7 @@ def seed_dropdown_values(db: Session) -> None:
     ]
 
     for category, value, order in dropdown_data:
-        dropdown_value = DropdownValue(
-            category=category, value=value, display_order=order
-        )
+        dropdown_value = DropdownValue(category=category, value=value, display_order=order)
         db.add(dropdown_value)
 
     db.commit()
@@ -161,7 +159,7 @@ def seed_sample_risks(db: Session) -> None:
             "next_review_date": date(2025, 10, 8),
         },
         # TR-2025-003: Identity Provider Cascade Failure
-{
+        {
             "risk_id": "TR-2025-003",
             "risk_title": "Identity Provider Cascade Failure",
             "risk_category": "Cybersecurity",
@@ -268,14 +266,12 @@ def seed_sample_risks(db: Session) -> None:
     # Create RiskLogEntry objects and add to database
     for update_data in sample_updates:
         # Check if log entry already exists
-        existing_entry = db.query(RiskLogEntry).filter(
-            RiskLogEntry.log_entry_id == update_data["log_entry_id"]
-        ).first()
-        
+        existing_entry = db.query(RiskLogEntry).filter(RiskLogEntry.log_entry_id == update_data["log_entry_id"]).first()
+
         if existing_entry:
             print(f"Skipping existing log entry: {update_data['log_entry_id']}")
             continue
-        
+
         try:
             update = RiskLogEntry(**update_data)
             db.add(update)

@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Box, Button, Container, Paper, TextField, Typography, Alert } from '@mui/material';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export function Login() {
   const [username, setUsername] = useState('');
@@ -22,13 +22,14 @@ export function Login() {
     try {
       await login(username, password);
       // Navigation handled by AuthContext
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
 
       // Handle different error types
-      if (err.response?.status === 401) {
+      const error = err as { response?: { status?: number }; code?: string };
+      if (error.response?.status === 401) {
         setError('Incorrect username or password');
-      } else if (err.code === 'ERR_NETWORK') {
+      } else if (error.code === 'ERR_NETWORK') {
         setError('Unable to connect to server. Please check your connection.');
       } else {
         setError('An error occurred during login. Please try again.');

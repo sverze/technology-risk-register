@@ -92,9 +92,7 @@ def test_get_dropdown_values_by_category_all(client, sample_dropdown_values):
 
 def test_get_dropdown_values_by_category_specific(client, sample_dropdown_values):
     """Test GET /dropdown/values/by-category with specific categories."""
-    response = client.get(
-        "/api/v1/dropdown/values/by-category?categories=risk_status&categories=risk_category"
-    )
+    response = client.get("/api/v1/dropdown/values/by-category?categories=risk_status&categories=risk_category")
 
     assert response.status_code == 200
     data = response.json()

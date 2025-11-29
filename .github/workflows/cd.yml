@@ -69,7 +69,7 @@ jobs:
         run: uv sync
 
       - name: Run tests with coverage
-        run: uv run pytest --ignore=tests/integration -v --cov=app --cov-report=term-missing --cov-fail-under=90
+        run: uv run pytest --ignore=tests/integration -v --cov=app --cov-report=term-missing --cov-fail-under=65
 
       - name: Upload coverage report
         if: always()

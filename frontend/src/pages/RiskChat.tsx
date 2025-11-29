@@ -29,11 +29,11 @@ export const RiskChat: React.FC = () => {
       if (saved) {
         const parsed = JSON.parse(saved);
         // Convert timestamp strings back to Date objects
-        const messagesWithDates = parsed.map((msg: any) => ({
+        const messagesWithDates = parsed.map((msg: { timestamp: string | Date; [key: string]: unknown }) => ({
           ...msg,
           timestamp: new Date(msg.timestamp),
         }));
-        setMessages(messagesWithDates);
+        setMessages(messagesWithDates as ChatMessageData[]);
       }
     } catch (err) {
       console.error('Failed to load chat history:', err);
@@ -87,8 +87,9 @@ export const RiskChat: React.FC = () => {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, agentMessage]);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send message. Please try again.');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Failed to send message. Please try again.');
       console.error('Chat error:', err);
     } finally {
       setLoading(false);

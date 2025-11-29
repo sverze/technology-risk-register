@@ -32,9 +32,7 @@ class DashboardService:
             critical_high_risk_count=self._get_critical_high_risk_count(active_risks),
             risk_trend_change=self._get_risk_trend_change(),
             # Risk Distribution
-            risk_severity_distribution=self._get_risk_severity_distribution(
-                active_risks
-            ),
+            risk_severity_distribution=self._get_risk_severity_distribution(active_risks),
             # Technology Domains
             technology_domain_risks=self._get_technology_domain_risks(active_risks),
             # Control Posture
@@ -46,9 +44,7 @@ class DashboardService:
             # Financial Impact
             total_financial_exposure=self._get_total_financial_exposure(active_risks),
             average_financial_impact=self._get_average_financial_impact(active_risks),
-            high_financial_impact_risks=self._get_high_financial_impact_risks(
-                active_risks
-            ),
+            high_financial_impact_risks=self._get_high_financial_impact_risks(active_risks),
             # Risk Management Activity
             risk_management_activity=self._get_risk_management_activity(),
             # Business Service Exposure
@@ -57,9 +53,7 @@ class DashboardService:
 
     def _get_active_risks_query(self):
         """Get query for active risks."""
-        return self.db.query(Risk).filter(
-            or_(Risk.risk_status == "Active", Risk.risk_status == "Monitoring")
-        )
+        return self.db.query(Risk).filter(or_(Risk.risk_status == "Active", Risk.risk_status == "Monitoring"))
 
     def _get_total_active_risks(self, active_risks) -> int:
         """Get total count of active risks."""
@@ -70,8 +64,8 @@ class DashboardService:
         # Count risks with Critical or High net exposure
         return active_risks.filter(
             or_(
-                Risk.business_disruption_net_exposure.like('%Critical%'),
-                Risk.business_disruption_net_exposure.like('%High%')
+                Risk.business_disruption_net_exposure.like("%Critical%"),
+                Risk.business_disruption_net_exposure.like("%High%"),
             )
         ).count()
 
@@ -87,25 +81,15 @@ class DashboardService:
 
     def _get_risk_severity_distribution(self, active_risks) -> RiskSeverityDistribution:
         """Get risk distribution by Business Disruption net exposure levels."""
-        critical = active_risks.filter(
-            Risk.business_disruption_net_exposure.like('%Critical%')
-        ).count()
+        critical = active_risks.filter(Risk.business_disruption_net_exposure.like("%Critical%")).count()
 
-        high = active_risks.filter(
-            Risk.business_disruption_net_exposure.like('%High%')
-        ).count()
+        high = active_risks.filter(Risk.business_disruption_net_exposure.like("%High%")).count()
 
-        medium = active_risks.filter(
-            Risk.business_disruption_net_exposure.like('%Medium%')
-        ).count()
+        medium = active_risks.filter(Risk.business_disruption_net_exposure.like("%Medium%")).count()
 
-        low = active_risks.filter(
-            Risk.business_disruption_net_exposure.like('%Low%')
-        ).count()
+        low = active_risks.filter(Risk.business_disruption_net_exposure.like("%Low%")).count()
 
-        return RiskSeverityDistribution(
-            critical=critical, high=high, medium=medium, low=low
-        )
+        return RiskSeverityDistribution(critical=critical, high=high, medium=medium, low=low)
 
     def _get_technology_domain_risks(self, active_risks) -> list[TechnologyDomainRisk]:
         """Get risk count and average net exposure score by technology domain."""
@@ -120,8 +104,8 @@ class DashboardService:
                 domain_data[domain] = []
 
             # Extract numeric score from net exposure string like "Critical (15)"
-            exposure = risk.business_disruption_net_exposure or 'Low (1)'
-            match = re.search(r'\((\d+)\)', exposure)
+            exposure = risk.business_disruption_net_exposure or "Low (1)"
+            match = re.search(r"\((\d+)\)", exposure)
             score = int(match.group(1)) if match else 1
             domain_data[domain].append(score)
 
@@ -131,11 +115,13 @@ class DashboardService:
             risk_count = len(scores)
             avg_score = sum(scores) / risk_count if risk_count > 0 else 0.0
 
-            final_results.append(TechnologyDomainRisk(
-                domain=domain,
-                risk_count=risk_count,
-                average_risk_rating=avg_score,
-            ))
+            final_results.append(
+                TechnologyDomainRisk(
+                    domain=domain,
+                    risk_count=risk_count,
+                    average_risk_rating=avg_score,
+                )
+            )
 
         return final_results
 
@@ -154,21 +140,21 @@ class DashboardService:
         preventative_adequate = active_risks.filter(
             and_(
                 Risk.preventative_controls_coverage == "Complete Coverage",
-                Risk.preventative_controls_effectiveness == "Fully Effective"
+                Risk.preventative_controls_effectiveness == "Fully Effective",
             )
         ).count()
 
         detective_adequate = active_risks.filter(
             and_(
                 Risk.detective_controls_coverage == "Complete Coverage",
-                Risk.detective_controls_effectiveness == "Fully Effective"
+                Risk.detective_controls_effectiveness == "Fully Effective",
             )
         ).count()
 
         corrective_adequate = active_risks.filter(
             and_(
                 Risk.corrective_controls_coverage == "Complete Coverage",
-                Risk.corrective_controls_effectiveness == "Fully Effective"
+                Risk.corrective_controls_effectiveness == "Fully Effective",
             )
         ).count()
 
@@ -180,7 +166,7 @@ class DashboardService:
                 Risk.corrective_controls_coverage == "No Controls",
                 Risk.preventative_controls_coverage == "Incomplete Coverage",
                 Risk.detective_controls_coverage == "Incomplete Coverage",
-                Risk.corrective_controls_coverage == "Incomplete Coverage"
+                Risk.corrective_controls_coverage == "Incomplete Coverage",
             )
         ).count()
 
@@ -217,32 +203,22 @@ class DashboardService:
 
     def _get_risk_response_breakdown(self, active_risks) -> RiskResponseBreakdown:
         """Get risk response strategy breakdown."""
-        mitigate = active_risks.filter(
-            Risk.risk_response_strategy == "Mitigate"
-        ).count()
+        mitigate = active_risks.filter(Risk.risk_response_strategy == "Mitigate").count()
         accept = active_risks.filter(Risk.risk_response_strategy == "Accept").count()
-        transfer = active_risks.filter(
-            Risk.risk_response_strategy == "Transfer"
-        ).count()
+        transfer = active_risks.filter(Risk.risk_response_strategy == "Transfer").count()
         avoid = active_risks.filter(Risk.risk_response_strategy == "Avoid").count()
 
-        return RiskResponseBreakdown(
-            mitigate=mitigate, accept=accept, transfer=transfer, avoid=avoid
-        )
+        return RiskResponseBreakdown(mitigate=mitigate, accept=accept, transfer=transfer, avoid=avoid)
 
     def _get_total_financial_exposure(self, active_risks) -> Decimal:
         """Get total financial exposure (sum of high estimates)."""
-        result = active_risks.with_entities(
-            func.sum(Risk.financial_impact_high)
-        ).scalar()
+        result = active_risks.with_entities(func.sum(Risk.financial_impact_high)).scalar()
 
         return result if result else Decimal("0.00")
 
     def _get_average_financial_impact(self, active_risks) -> Decimal:
         """Get average financial impact per risk."""
-        result = active_risks.with_entities(
-            func.avg(Risk.financial_impact_high)
-        ).scalar()
+        result = active_risks.with_entities(func.avg(Risk.financial_impact_high)).scalar()
 
         return Decimal(str(result)) if result else Decimal("0.00")
 
@@ -255,16 +231,10 @@ class DashboardService:
         current_month_start = date.today().replace(day=1)
 
         # Risks reviewed this month
-        reviewed_this_month = (
-            self.db.query(Risk)
-            .filter(Risk.last_reviewed >= current_month_start)
-            .count()
-        )
+        reviewed_this_month = self.db.query(Risk).filter(Risk.last_reviewed >= current_month_start).count()
 
         # Overdue reviews
-        overdue_reviews = (
-            self.db.query(Risk).filter(Risk.next_review_date < date.today()).count()
-        )
+        overdue_reviews = self.db.query(Risk).filter(Risk.next_review_date < date.today()).count()
 
         # Recent rating changes (last 30 days)
         thirty_days_ago = date.today() - timedelta(days=30)
@@ -290,9 +260,7 @@ class DashboardService:
         total_active = active_risks.count()
 
         # Risks affecting IBS (now a text field, check for non-empty values)
-        ibs_risks = active_risks.filter(
-            and_(Risk.ibs_affected is not None, Risk.ibs_affected != "")
-        )
+        ibs_risks = active_risks.filter(and_(Risk.ibs_affected is not None, Risk.ibs_affected != ""))
         ibs_risk_count = ibs_risks.count()
 
         # For total IBS affected, we'll estimate based on the count since it's now text
@@ -300,14 +268,10 @@ class DashboardService:
         total_ibs_affected = ibs_risk_count  # Simplified: assume 1 IBS per risk with IBS impact
 
         # Percentage with IBS impact
-        percentage_with_ibs = (
-            (ibs_risk_count / total_active * 100) if total_active > 0 else 0.0
-        )
+        percentage_with_ibs = (ibs_risk_count / total_active * 100) if total_active > 0 else 0.0
 
         # Critical risks affecting IBS (based on net exposure)
-        critical_ibs_risks = ibs_risks.filter(
-            Risk.business_disruption_net_exposure.like('%Critical%')
-        ).count()
+        critical_ibs_risks = ibs_risks.filter(Risk.business_disruption_net_exposure.like("%Critical%")).count()
 
         return BusinessServiceExposure(
             risks_affecting_ibs=ibs_risk_count,

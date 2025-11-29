@@ -53,13 +53,13 @@ export const RiskList: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
   const [sortBy, setSortBy] = useState('business_disruption_net_exposure');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
+
   // Column widths state for resizing
   const [columnWidths, setColumnWidths] = useState({
     risk_id: 120,
@@ -71,7 +71,7 @@ export const RiskList: React.FC = () => {
     review: 130,
     actions: 80
   });
-  
+
   // Resizing state
   const [isResizing, setIsResizing] = useState(false);
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
@@ -200,7 +200,7 @@ export const RiskList: React.FC = () => {
           }
         }
       }
-      
+
       if (logEntriesData.length > 0) {
         const logEntriesWs = workbook.addWorksheet('Risk Log Entries');
         const logHeaders = Object.keys(logEntriesData[0]);
@@ -277,7 +277,7 @@ export const RiskList: React.FC = () => {
     link.click();
     document.body.removeChild(link);
   };
-  
+
   // Column resizing handlers
   const handleMouseDown = (e: React.MouseEvent, column: string) => {
     e.preventDefault();
@@ -286,35 +286,36 @@ export const RiskList: React.FC = () => {
     setStartX(e.clientX);
     setStartWidth(columnWidths[column as keyof typeof columnWidths]);
   };
-  
+
   const handleMouseMove = (e: MouseEvent) => {
     if (!isResizing || !resizingColumn) return;
-    
+
     const diff = e.clientX - startX;
     const newWidth = Math.max(80, startWidth + diff); // Minimum width of 80px
-    
+
     setColumnWidths(prev => ({
       ...prev,
       [resizingColumn]: newWidth
     }));
   };
-  
+
   const handleMouseUp = () => {
     setIsResizing(false);
     setResizingColumn(null);
   };
-  
+
   // Add event listeners for resizing
   React.useEffect(() => {
     if (isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      
+
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isResizing, resizingColumn, startX, startWidth]);
 
   if (isLoading) {
@@ -477,9 +478,9 @@ export const RiskList: React.FC = () => {
       </Box>
 
       {/* Risk table */}
-      <TableContainer 
-        component={Paper} 
-        sx={{ 
+      <TableContainer
+        component={Paper}
+        sx={{
           boxShadow: 1,
           overflowX: 'auto',
           '& .resize-handle': {
@@ -499,9 +500,9 @@ export const RiskList: React.FC = () => {
           <TableHead sx={{ backgroundColor: 'grey.50' }}>
             <TableRow>
               {/* Risk ID - Always visible */}
-              <TableCell 
-                sx={{ 
-                  width: `${columnWidths.risk_id}px`, 
+              <TableCell
+                sx={{
+                  width: `${columnWidths.risk_id}px`,
                   fontWeight: 600,
                   position: 'relative',
                   borderRight: '1px solid',
@@ -533,11 +534,11 @@ export const RiskList: React.FC = () => {
                   )}
                 </Box>
               </TableCell>
-              
+
               {/* Title & Description - Always visible */}
-              <TableCell 
-                sx={{ 
-                  width: `${columnWidths.title}px`, 
+              <TableCell
+                sx={{
+                  width: `${columnWidths.title}px`,
                   fontWeight: 600,
                   position: 'relative',
                   borderRight: '1px solid',
@@ -569,12 +570,12 @@ export const RiskList: React.FC = () => {
                   )}
                 </Box>
               </TableCell>
-              
+
               {/* Category - Hide on mobile */}
               {!isMobile && (
-                <TableCell 
-                  sx={{ 
-                    width: `${columnWidths.category}px`, 
+                <TableCell
+                  sx={{
+                    width: `${columnWidths.category}px`,
                     fontWeight: 600,
                     position: 'relative',
                     borderRight: '1px solid',
@@ -605,7 +606,7 @@ export const RiskList: React.FC = () => {
                   </Box>
                 </TableCell>
               )}
-              
+
               {/* Net Exposure - Always visible */}
               <TableCell
                 sx={{
@@ -641,12 +642,12 @@ export const RiskList: React.FC = () => {
                   )}
                 </Box>
               </TableCell>
-              
+
               {/* Status - Hide on mobile */}
               {!isMobile && (
-                <TableCell 
-                  sx={{ 
-                    width: `${columnWidths.status}px`, 
+                <TableCell
+                  sx={{
+                    width: `${columnWidths.status}px`,
                     fontWeight: 600,
                     position: 'relative',
                     borderRight: '1px solid',
@@ -677,12 +678,12 @@ export const RiskList: React.FC = () => {
                   </Box>
                 </TableCell>
               )}
-              
+
               {/* Owner - Hide on tablet and mobile */}
               {!isTablet && (
-                <TableCell 
-                  sx={{ 
-                    width: `${columnWidths.owner}px`, 
+                <TableCell
+                  sx={{
+                    width: `${columnWidths.owner}px`,
                     fontWeight: 600,
                     position: 'relative',
                     borderRight: '1px solid',
@@ -713,12 +714,12 @@ export const RiskList: React.FC = () => {
                   </Box>
                 </TableCell>
               )}
-              
+
               {/* Next Review - Hide on tablet and mobile */}
               {!isTablet && (
-                <TableCell 
-                  sx={{ 
-                    width: `${columnWidths.review}px`, 
+                <TableCell
+                  sx={{
+                    width: `${columnWidths.review}px`,
                     fontWeight: 600,
                     position: 'relative',
                     borderRight: '1px solid',
@@ -749,7 +750,7 @@ export const RiskList: React.FC = () => {
                   </Box>
                 </TableCell>
               )}
-              
+
               {/* Actions - Always visible */}
               <TableCell sx={{ width: `${columnWidths.actions}px`, fontWeight: 600 }}>Actions</TableCell>
             </TableRow>
@@ -760,7 +761,7 @@ export const RiskList: React.FC = () => {
                 <TableRow
                   key={risk.risk_id}
                   hover
-                  sx={{ 
+                  sx={{
                     cursor: 'pointer',
                     '&:nth-of-type(odd)': { backgroundColor: 'action.hover' },
                     '&:hover': { backgroundColor: 'primary.light', color: 'primary.contrastText' }
@@ -773,14 +774,14 @@ export const RiskList: React.FC = () => {
                       {risk.risk_id}
                     </Typography>
                   </TableCell>
-                  
+
                   {/* Title & Description - Always visible */}
                   <TableCell sx={{ py: 2, width: `${columnWidths.title}px` }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
                       {risk.risk_title}
                     </Typography>
                     {!isMobile && (
-                      <Typography variant="body2" color="text.secondary" sx={{ 
+                      <Typography variant="body2" color="text.secondary" sx={{
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
@@ -802,14 +803,14 @@ export const RiskList: React.FC = () => {
                       </Box>
                     )}
                   </TableCell>
-                  
+
                   {/* Category - Hide on mobile */}
                   {!isMobile && (
                     <TableCell sx={{ py: 2, width: `${columnWidths.category}px` }}>
                       <Typography variant="body2">{risk.risk_category}</Typography>
                     </TableCell>
                   )}
-                  
+
                   {/* Net Exposure - Always visible */}
                   <TableCell sx={{ py: 2, width: `${columnWidths.rating}px` }}>
                     <Chip
@@ -824,19 +825,19 @@ export const RiskList: React.FC = () => {
                       </Typography>
                     )}
                   </TableCell>
-                  
+
                   {/* Status - Hide on mobile */}
                   {!isMobile && (
                     <TableCell sx={{ py: 2, width: `${columnWidths.status}px` }}>
-                      <Chip 
-                        label={risk.risk_status} 
-                        variant="outlined" 
+                      <Chip
+                        label={risk.risk_status}
+                        variant="outlined"
                         size="small"
                         color={risk.risk_status === 'Active' ? 'error' : risk.risk_status === 'Monitoring' ? 'warning' : 'default'}
                       />
                     </TableCell>
                   )}
-                  
+
                   {/* Owner - Hide on tablet and mobile */}
                   {!isTablet && (
                     <TableCell sx={{ py: 2, width: `${columnWidths.owner}px` }}>
@@ -848,7 +849,7 @@ export const RiskList: React.FC = () => {
                       </Typography>
                     </TableCell>
                   )}
-                  
+
                   {/* Next Review - Hide on tablet and mobile */}
                   {!isTablet && (
                     <TableCell sx={{ py: 2, width: `${columnWidths.review}px` }}>
@@ -862,12 +863,12 @@ export const RiskList: React.FC = () => {
                       )}
                     </TableCell>
                   )}
-                  
+
                   {/* Actions - Always visible */}
                   <TableCell sx={{ py: 2, width: `${columnWidths.actions}px` }}>
                     <Tooltip title="View Risk Details">
-                      <IconButton 
-                        size="small" 
+                      <IconButton
+                        size="small"
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(`/risks/${risk.risk_id}`);
@@ -890,8 +891,8 @@ export const RiskList: React.FC = () => {
                     {search || category || status ? 'Try adjusting your filters' : 'Get started by adding your first risk'}
                   </Typography>
                   {!search && !category && !status && (
-                    <Button 
-                      variant="contained" 
+                    <Button
+                      variant="contained"
                       startIcon={<AddIcon />}
                       onClick={() => navigate('/risks/new')}
                       sx={{ mt: 2 }}

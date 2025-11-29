@@ -238,10 +238,10 @@ export const Dashboard: React.FC = () => {
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={severityChartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45} 
-                    textAnchor="end" 
+                  <XAxis
+                    dataKey="name"
+                    angle={-45}
+                    textAnchor="end"
                     height={50}
                     interval={0}
                     tick={{ fontSize: 12 }}
@@ -273,7 +273,7 @@ export const Dashboard: React.FC = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry: any) => `${entry.name} ${(entry.percent * 100).toFixed(0)}%`}
+                    label={(entry: { name: string; percent: number }) => `${entry.name} ${(entry.percent * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -450,13 +450,13 @@ export const Dashboard: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Risk Management Activity
               </Typography>
-              
+
               {/* Overall Status Banner */}
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                mb: 3, 
-                p: 2, 
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mb: 3,
+                p: 2,
                 borderRadius: 2,
                 bgcolor: `${getActivityStatus().color}.light`,
                 border: `2px solid`,
@@ -475,17 +475,17 @@ export const Dashboard: React.FC = () => {
                     Reviews This Month
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <CheckCircle 
-                      color={data.risk_management_activity.risks_reviewed_this_month >= 5 ? 'success' : 'disabled'} 
-                      sx={{ mr: 1 }} 
+                    <CheckCircle
+                      color={data.risk_management_activity.risks_reviewed_this_month >= 5 ? 'success' : 'disabled'}
+                      sx={{ mr: 1 }}
                     />
                     <Typography variant="h5" color="primary.main">
                       {data.risk_management_activity.risks_reviewed_this_month}
                     </Typography>
                   </Box>
                 </Box>
-                <LinearProgress 
-                  variant="determinate" 
+                <LinearProgress
+                  variant="determinate"
                   value={Math.min((data.risk_management_activity.risks_reviewed_this_month / 10) * 100, 100)}
                   sx={{ height: 6, borderRadius: 3, mb: 1 }}
                 />
@@ -505,8 +505,8 @@ export const Dashboard: React.FC = () => {
                     ) : (
                       <CheckCircle color="success" sx={{ mr: 1 }} />
                     )}
-                    <Typography 
-                      variant="h5" 
+                    <Typography
+                      variant="h5"
                       color={data.risk_management_activity.overdue_reviews > 0 ? 'error.main' : 'success.main'}
                     >
                       {data.risk_management_activity.overdue_reviews}

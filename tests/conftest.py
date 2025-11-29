@@ -14,7 +14,7 @@ SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
     SQLALCHEMY_TEST_DATABASE_URL,
     connect_args={"check_same_thread": False},
-    poolclass=StaticPool  # Use a single connection pool for in-memory database
+    poolclass=StaticPool,  # Use a single connection pool for in-memory database
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -350,9 +350,7 @@ def sample_dropdown_values(db_session):
 
     dropdown_values = []
     for category, value, order in dropdown_data:
-        dropdown_value = DropdownValue(
-            category=category, value=value, display_order=order, is_active=True
-        )
+        dropdown_value = DropdownValue(category=category, value=value, display_order=order, is_active=True)
         dropdown_values.append(dropdown_value)
         db_session.add(dropdown_value)
 

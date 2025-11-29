@@ -7,7 +7,8 @@ import { ViewRisk } from '@/pages/ViewRisk';
 import { EditRisk } from '@/pages/EditRisk';
 import { RiskChat } from '@/pages/RiskChat';
 import { Login } from '@/pages/Login';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Box, CircularProgress } from '@mui/material';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {

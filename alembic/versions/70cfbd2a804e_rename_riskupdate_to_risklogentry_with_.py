@@ -90,15 +90,9 @@ def downgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("update_id"),
     )
-    op.create_index(
-        op.f("ix_risk_updates_update_id"), "risk_updates", ["update_id"], unique=False
-    )
-    op.create_index(
-        op.f("ix_risk_updates_risk_id"), "risk_updates", ["risk_id"], unique=False
-    )
+    op.create_index(op.f("ix_risk_updates_update_id"), "risk_updates", ["update_id"], unique=False)
+    op.create_index(op.f("ix_risk_updates_risk_id"), "risk_updates", ["risk_id"], unique=False)
     op.drop_index(op.f("ix_risk_log_entries_risk_id"), table_name="risk_log_entries")
-    op.drop_index(
-        op.f("ix_risk_log_entries_log_entry_id"), table_name="risk_log_entries"
-    )
+    op.drop_index(op.f("ix_risk_log_entries_log_entry_id"), table_name="risk_log_entries")
     op.drop_table("risk_log_entries")
     # ### end Alembic commands ###

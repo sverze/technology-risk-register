@@ -104,9 +104,7 @@ def create_risk(risk_data: RiskCreate, db: Session = Depends(get_db)) -> Risk:
 
 
 @router.put("/{risk_id}", response_model=Risk)
-def update_risk(
-    risk_id: str, risk_data: RiskUpdate, db: Session = Depends(get_db)
-) -> Risk:
+def update_risk(risk_id: str, risk_data: RiskUpdate, db: Session = Depends(get_db)) -> Risk:
     service = RiskService(db)
     risk = service.update_risk(risk_id, risk_data)
     if not risk:
@@ -123,9 +121,7 @@ def delete_risk(risk_id: str, db: Session = Depends(get_db)) -> dict[str, str]:
 
 
 @router.get("/{risk_id}/updates", response_model=list[RiskUpdateResponse])
-def get_risk_updates(
-    risk_id: str, db: Session = Depends(get_db)
-) -> list[RiskUpdateResponse]:
+def get_risk_updates(risk_id: str, db: Session = Depends(get_db)) -> list[RiskUpdateResponse]:
     """Get all update logs for a specific risk."""
     service = RiskService(db)
     # First check if risk exists
@@ -137,9 +133,7 @@ def get_risk_updates(
 
 
 @router.get("/updates/recent", response_model=list[RiskUpdateResponse])
-def get_recent_risk_updates(
-    limit: int = 50, db: Session = Depends(get_db)
-) -> list[RiskUpdateResponse]:
+def get_recent_risk_updates(limit: int = 50, db: Session = Depends(get_db)) -> list[RiskUpdateResponse]:
     """Get recent risk updates across all risks."""
     if limit > 100:
         raise HTTPException(status_code=400, detail="Limit cannot exceed 100")
@@ -168,9 +162,7 @@ def create_risk_log_entry(
 
 
 @router.get("/{risk_id}/log-entries", response_model=list[RiskLogEntryResponse])
-def get_risk_log_entries(
-    risk_id: str, db: Session = Depends(get_db)
-) -> list[RiskLogEntryResponse]:
+def get_risk_log_entries(risk_id: str, db: Session = Depends(get_db)) -> list[RiskLogEntryResponse]:
     """Get all log entries for a specific risk, ordered by most recent first."""
     service = RiskService(db)
 
@@ -183,9 +175,7 @@ def get_risk_log_entries(
 
 
 @router.get("/log-entries/{log_entry_id}", response_model=RiskLogEntryResponse)
-def get_risk_log_entry(
-    log_entry_id: str, db: Session = Depends(get_db)
-) -> RiskLogEntryResponse:
+def get_risk_log_entry(log_entry_id: str, db: Session = Depends(get_db)) -> RiskLogEntryResponse:
     """Get a specific log entry by ID."""
     service = RiskService(db)
     log_entry = service.get_risk_log_entry(log_entry_id)
@@ -207,9 +197,7 @@ def update_risk_log_entry(
 
 
 @router.post("/log-entries/{log_entry_id}/approve", response_model=RiskLogEntryResponse)
-def approve_risk_log_entry(
-    log_entry_id: str, reviewed_by: str, db: Session = Depends(get_db)
-) -> RiskLogEntryResponse:
+def approve_risk_log_entry(log_entry_id: str, reviewed_by: str, db: Session = Depends(get_db)) -> RiskLogEntryResponse:
     """Approve a log entry and update the parent risk's current rating."""
     service = RiskService(db)
     log_entry = service.approve_risk_log_entry(log_entry_id, reviewed_by)
@@ -219,9 +207,7 @@ def approve_risk_log_entry(
 
 
 @router.post("/log-entries/{log_entry_id}/reject", response_model=RiskLogEntryResponse)
-def reject_risk_log_entry(
-    log_entry_id: str, reviewed_by: str, db: Session = Depends(get_db)
-) -> RiskLogEntryResponse:
+def reject_risk_log_entry(log_entry_id: str, reviewed_by: str, db: Session = Depends(get_db)) -> RiskLogEntryResponse:
     """Reject a log entry."""
     service = RiskService(db)
     log_entry = service.reject_risk_log_entry(log_entry_id, reviewed_by)
@@ -231,9 +217,7 @@ def reject_risk_log_entry(
 
 
 @router.delete("/log-entries/{log_entry_id}")
-def delete_risk_log_entry(
-    log_entry_id: str, db: Session = Depends(get_db)
-) -> dict[str, str]:
+def delete_risk_log_entry(log_entry_id: str, db: Session = Depends(get_db)) -> dict[str, str]:
     """Delete a log entry."""
     service = RiskService(db)
     if not service.delete_risk_log_entry(log_entry_id):

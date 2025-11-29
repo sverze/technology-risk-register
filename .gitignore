@@ -215,3 +215,4 @@ crash.*.log
 # Terraform CLI configuration
 .terraformrc
 terraform.rc
+complete_seed_risks.py

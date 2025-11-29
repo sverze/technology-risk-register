@@ -8,9 +8,7 @@ class DropdownService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_dropdown_values(
-        self, category: str | None = None
-    ) -> list[DropdownValueSchema]:
+    def get_dropdown_values(self, category: str | None = None) -> list[DropdownValueSchema]:
         """Get dropdown values, optionally filtered by category."""
         query = self.db.query(DropdownValue).filter(DropdownValue.is_active)
 
@@ -36,16 +34,12 @@ class DropdownService:
         """Get dropdown values grouped by category."""
         if categories:
             # Get specific categories
-            query = self.db.query(DropdownValue).filter(
-                DropdownValue.is_active, DropdownValue.category.in_(categories)
-            )
+            query = self.db.query(DropdownValue).filter(DropdownValue.is_active, DropdownValue.category.in_(categories))
         else:
             # Get all categories
             query = self.db.query(DropdownValue).filter(DropdownValue.is_active)
 
-        dropdown_values = query.order_by(
-            DropdownValue.category, DropdownValue.display_order, DropdownValue.value
-        ).all()
+        dropdown_values = query.order_by(DropdownValue.category, DropdownValue.display_order, DropdownValue.value).all()
 
         # Group by category
         result = {}

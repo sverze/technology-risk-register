@@ -28,8 +28,8 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout:
       signal: controller.signal,
     });
     return response;
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'AbortError') {
       throw new ApiError(408, 'Request timeout - please try again');
     }
     throw error;
@@ -42,7 +42,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   const url = `${API_BASE_URL}${endpoint}`;
 
   // Proactively ensure we have a valid token before making the request
-  let token = await ensureValidToken();
+  const token = await ensureValidToken();
 
   // If token refresh failed, redirect to login
   if (!token && getToken()) {
@@ -82,7 +82,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
         headers,
         ...options,
       });
-    } catch (error) {
+    } catch {
       // Refresh failed - redirect to login
       clearAuth();
       if (window.location.pathname !== '/login') {
@@ -331,7 +331,7 @@ export interface ChatRequest {
 export interface ChatResponse {
   answer: string;
   status: 'success' | 'no_results' | 'invalid_request' | 'error';
-  answer_rows?: Array<Record<string, any>> | null;
+  answer_rows?: Array<Record<string, unknown>> | null;
   code?: string | null;
   error?: string | null;
   execution_log?: string | null;
