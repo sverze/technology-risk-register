@@ -244,7 +244,7 @@ export function isAuthenticated(): boolean {
  * Decode JWT token to extract payload (without verification).
  * Returns null if token is invalid or malformed.
  */
-function decodeJWT(token: string): any | null {
+function decodeJWT(token: string): { exp?: number; [key: string]: unknown } | null {
   try {
     const base64Url = token.split('.')[1];
     if (!base64Url) return null;

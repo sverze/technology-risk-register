@@ -257,9 +257,7 @@ class TestRiskEndpoints:
     def test_get_risks_with_sorting(self):
         """Test sorting risks."""
         # Test sorting by title ascending
-        response = requests.get(
-            f"{API_V1_BASE}/risks/?sort_by=risk_title&sort_order=asc&limit=5"
-        )
+        response = requests.get(f"{API_V1_BASE}/risks/?sort_by=risk_title&sort_order=asc&limit=5")
         assert response.status_code == 200
 
         data = response.json()

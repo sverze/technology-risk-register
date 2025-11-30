@@ -22,9 +22,7 @@ class TestDropdownService:
             values[i + 1]
             assert current.is_active is True
 
-    def test_get_dropdown_values_with_category_filter(
-        self, db_session, sample_dropdown_values
-    ):
+    def test_get_dropdown_values_with_category_filter(self, db_session, sample_dropdown_values):
         """Test get_dropdown_values with category filter."""
         service = DropdownService(db_session)
         values = service.get_dropdown_values(category="risk_status")
@@ -34,9 +32,7 @@ class TestDropdownService:
             assert value.category == "risk_status"
             assert value.is_active is True
 
-    def test_get_dropdown_values_nonexistent_category(
-        self, db_session, sample_dropdown_values
-    ):
+    def test_get_dropdown_values_nonexistent_category(self, db_session, sample_dropdown_values):
         """Test get_dropdown_values with nonexistent category."""
         service = DropdownService(db_session)
         values = service.get_dropdown_values(category="nonexistent_category")
@@ -54,9 +50,7 @@ class TestDropdownService:
         # Should be sorted alphabetically
         assert categories == sorted(categories)
 
-    def test_get_dropdown_values_by_categories_all(
-        self, db_session, sample_dropdown_values
-    ):
+    def test_get_dropdown_values_by_categories_all(self, db_session, sample_dropdown_values):
         """Test get_dropdown_values_by_categories without specific categories."""
         service = DropdownService(db_session)
         result = service.get_dropdown_values_by_categories()
@@ -72,15 +66,11 @@ class TestDropdownService:
                 assert value.category == category
                 assert value.is_active is True
 
-    def test_get_dropdown_values_by_categories_specific(
-        self, db_session, sample_dropdown_values
-    ):
+    def test_get_dropdown_values_by_categories_specific(self, db_session, sample_dropdown_values):
         """Test get_dropdown_values_by_categories with specific categories."""
         service = DropdownService(db_session)
         requested_categories = ["risk_status", "risk_category"]
-        result = service.get_dropdown_values_by_categories(
-            categories=requested_categories
-        )
+        result = service.get_dropdown_values_by_categories(categories=requested_categories)
 
         assert isinstance(result, dict)
         # Should only include requested categories that exist
@@ -93,9 +83,7 @@ class TestDropdownService:
                 assert value.category == category
                 assert value.is_active is True
 
-    def test_get_dropdown_values_by_categories_nonexistent(
-        self, db_session, sample_dropdown_values
-    ):
+    def test_get_dropdown_values_by_categories_nonexistent(self, db_session, sample_dropdown_values):
         """Test get_dropdown_values_by_categories with nonexistent categories."""
         service = DropdownService(db_session)
         result = service.get_dropdown_values_by_categories(categories=["nonexistent"])

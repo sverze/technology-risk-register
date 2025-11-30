@@ -276,9 +276,7 @@ class TestRiskService:
         assert count == 1
 
         # Count cybersecurity risks with search
-        count = service.get_risks_count(
-            category="Cybersecurity", search="vulnerability"
-        )
+        count = service.get_risks_count(category="Cybersecurity", search="vulnerability")
         assert count == 1
 
     def test_get_risks_count_no_results(self, db_session, sample_risks):
@@ -341,11 +339,7 @@ class TestRiskService:
         assert risk.business_disruption_net_exposure is not None
 
         # Check that log entry was created
-        log_entry = (
-            db_session.query(RiskLogEntry)
-            .filter(RiskLogEntry.risk_id == risk.risk_id)
-            .first()
-        )
+        log_entry = db_session.query(RiskLogEntry).filter(RiskLogEntry.risk_id == risk.risk_id).first()
         assert log_entry is not None
         assert log_entry.entry_type == "Risk Creation"
 
@@ -443,9 +437,7 @@ class TestRiskService:
         assert risk_id == "TR-2024-001"
 
     @patch("app.services.risk_service.datetime")
-    def test_generate_risk_id_subsequent_risk(
-        self, mock_datetime, db_session, sample_risks
-    ):
+    def test_generate_risk_id_subsequent_risk(self, mock_datetime, db_session, sample_risks):
         """Test _generate_risk_id for subsequent risk."""
         mock_datetime.now.return_value = datetime(2024, 1, 15)
 
@@ -533,11 +525,7 @@ class TestRiskService:
         db_session.commit()
 
         # Verify log entry was created
-        saved_entry = (
-            db_session.query(RiskLogEntry)
-            .filter(RiskLogEntry.risk_id == "TR-2024-TEST-001")
-            .first()
-        )
+        saved_entry = db_session.query(RiskLogEntry).filter(RiskLogEntry.risk_id == "TR-2024-TEST-001").first()
 
         assert saved_entry is not None
         assert saved_entry.log_entry_id == "LOG-TR-2024-TEST-001-01"

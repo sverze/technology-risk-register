@@ -6,6 +6,7 @@ A modern web application for managing technology risks with executive dashboard 
 
 - **Risk Management**: Complete CRUD operations for technology risks
 - **Executive Dashboard**: Real-time metrics and visualizations for decision makers
+- **AI-Powered Risk Chat**: Natural language interface to query risks using Claude (Anthropic)
 - **Audit Trail**: Full history tracking of risk changes
 - **Intelligent Prioritization**: Smart risk sorting by rating, financial impact, and business service impact
 - **Serverless Ready**: SQLite + Cloud Storage architecture for cost-effective GCP deployment
@@ -57,13 +58,27 @@ A modern web application for managing technology risks with executive dashboard 
 
 ### Docker Development
 
-1. **Build and run with Docker Compose**
+1. **Set up environment variables** (required for Risk SME Chat)
+   ```bash
+   # Copy the example file
+   cp .env.example .env
+
+   # Edit .env and add your Anthropic API key
+   # Get your key from: https://console.anthropic.com/settings/keys
+   nano .env
+   ```
+
+   📖 **[Environment Setup Guide](./ENV_SETUP.md)** - Detailed instructions for configuring API keys and secrets
+
+2. **Build and run with Docker Compose**
    ```bash
    docker-compose up --build
    ```
 
-2. **Access the application**
-   - API: http://localhost:8000
+3. **Access the application**
+   - API: http://localhost:8080
+   - Frontend: http://localhost:3000
+   - API Documentation: http://localhost:8080/docs
 
 ## Development Commands
 
@@ -162,6 +177,11 @@ uv run alembic downgrade -1
 - `PUT /api/v1/risks/{risk_id}` - Update risk
 - `DELETE /api/v1/risks/{risk_id}` - Delete risk
 
+### Risk SME Chat (AI-Powered)
+- `POST /api/v1/chat/` - Ask natural language questions about risks
+- `GET /api/v1/chat/health` - Check chat service health
+- **Requires**: `ANTHROPIC_API_KEY` environment variable
+
 ### Dashboard
 - `GET /api/v1/dashboard/` - Get complete dashboard data
 
@@ -189,6 +209,36 @@ The dashboard provides 9 key components:
 7. Financial Impact Exposure
 8. Risk Management Activity
 9. Business Service Risk Exposure
+
+## CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment.
+
+### Pull Request Validation (CI)
+When you open a pull request, the following checks run automatically:
+- **Backend**: Black format check, Ruff linting, MyPy type checking, pytest with 90% coverage
+- **Frontend**: ESLint, TypeScript type checking
+- **Build Verification**: Docker image build, frontend build
+
+All checks must pass before merging to `main`.
+
+### Automated Deployment (CD)
+On push to `main` branch, the pipeline:
+1. Runs all quality checks and tests
+2. Builds and pushes Docker image to `ghcr.io/sverze/technology-risk-register`
+3. Builds frontend and uploads as artifact
+4. Triggers Harness deployment webhook with metadata
+
+**Manual Deployment:**
+You can trigger builds manually from the GitHub Actions UI with optional environment selection (production/staging).
+
+**Container Registry:**
+- Backend images: `ghcr.io/sverze/technology-risk-register:latest`
+- Tagged with commit SHA: `ghcr.io/sverze/technology-risk-register:main-abc1234`
+
+**Setup Requirements:**
+1. GitHub Settings → Actions → Workflow permissions → "Read and write permissions"
+2. Add repository secret: `HARNESS_WEBHOOK_URL` (for automated deployments)
 
 ## Deployment
 

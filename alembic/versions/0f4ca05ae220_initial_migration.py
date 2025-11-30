@@ -53,17 +53,11 @@ def upgrade() -> None:
         sa.Column("risk_response_strategy", sa.String(length=20), nullable=False),
         sa.Column("planned_mitigations", sa.String(length=200), nullable=True),
         sa.Column("preventative_controls_status", sa.String(length=20), nullable=False),
-        sa.Column(
-            "preventative_controls_description", sa.String(length=150), nullable=True
-        ),
+        sa.Column("preventative_controls_description", sa.String(length=150), nullable=True),
         sa.Column("detective_controls_status", sa.String(length=20), nullable=False),
-        sa.Column(
-            "detective_controls_description", sa.String(length=150), nullable=True
-        ),
+        sa.Column("detective_controls_description", sa.String(length=150), nullable=True),
         sa.Column("corrective_controls_status", sa.String(length=20), nullable=False),
-        sa.Column(
-            "corrective_controls_description", sa.String(length=150), nullable=True
-        ),
+        sa.Column("corrective_controls_description", sa.String(length=150), nullable=True),
         sa.Column("control_gaps", sa.String(length=150), nullable=True),
         sa.Column("risk_owner", sa.String(length=50), nullable=False),
         sa.Column("risk_owner_department", sa.String(length=50), nullable=False),
@@ -72,12 +66,8 @@ def upgrade() -> None:
         sa.Column("ibs_impact", sa.Boolean(), nullable=False),
         sa.Column("number_of_ibs_affected", sa.Integer(), nullable=True),
         sa.Column("business_criticality", sa.String(length=20), nullable=False),
-        sa.Column(
-            "financial_impact_low", sa.Numeric(precision=12, scale=2), nullable=True
-        ),
-        sa.Column(
-            "financial_impact_high", sa.Numeric(precision=12, scale=2), nullable=True
-        ),
+        sa.Column("financial_impact_low", sa.Numeric(precision=12, scale=2), nullable=True),
+        sa.Column("financial_impact_high", sa.Numeric(precision=12, scale=2), nullable=True),
         sa.Column("rto_hours", sa.Integer(), nullable=True),
         sa.Column("rpo_hours", sa.Integer(), nullable=True),
         sa.Column("sla_impact", sa.String(length=100), nullable=True),
@@ -107,12 +97,8 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("update_id"),
     )
-    op.create_index(
-        op.f("ix_risk_updates_risk_id"), "risk_updates", ["risk_id"], unique=False
-    )
-    op.create_index(
-        op.f("ix_risk_updates_update_id"), "risk_updates", ["update_id"], unique=False
-    )
+    op.create_index(op.f("ix_risk_updates_risk_id"), "risk_updates", ["risk_id"], unique=False)
+    op.create_index(op.f("ix_risk_updates_update_id"), "risk_updates", ["update_id"], unique=False)
     # ### end Alembic commands ###
 
 

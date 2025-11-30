@@ -29,9 +29,7 @@ def check_api_health(base_url: str, max_retries: int = 10, delay: int = 2) -> bo
             pass
 
         if attempt < max_retries - 1:
-            print(
-                f"⏳ Waiting for API to be ready... (attempt {attempt + 1}/{max_retries})"
-            )
+            print(f"⏳ Waiting for API to be ready... (attempt {attempt + 1}/{max_retries})")
             time.sleep(delay)
 
     return False
@@ -68,9 +66,7 @@ def main():
     """Main entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Run integration tests for Technology Risk Register API"
-    )
+    parser = argparse.ArgumentParser(description="Run integration tests for Technology Risk Register API")
     parser.add_argument(
         "--url",
         default="http://localhost:8000",

@@ -1,12 +1,13 @@
 """Tests for authentication endpoints and refresh token functionality."""
 
+from datetime import UTC, datetime
+
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime, timedelta, timezone
 
-from app.main import app
-from app.core.security import create_access_token, create_refresh_token, decode_refresh_token
 from app.core.config import settings
+from app.core.security import create_access_token, create_refresh_token
+from app.main import app
 
 
 @pytest.fixture
@@ -169,7 +170,6 @@ def test_logout_invalid_token(client):
 
 def test_token_types_are_different():
     """Test that access and refresh tokens have different types."""
-    from app.core.security import decode_access_token
     from jose import jwt
 
     access_token = create_access_token(data={"sub": "testuser"})
@@ -205,8 +205,8 @@ def test_access_token_expiry():
         algorithms=[settings.AUTH_ALGORITHM],
     )
 
-    exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-    now = datetime.now(timezone.utc)
+    exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
+    now = datetime.now(UTC)
 
     # Token should expire in approximately 30 minutes
     time_diff = (exp_time - now).total_seconds() / 60
@@ -225,8 +225,8 @@ def test_refresh_token_expiry():
         algorithms=[settings.AUTH_ALGORITHM],
     )
 
-    exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-    now = datetime.now(timezone.utc)
+    exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
+    now = datetime.now(UTC)
 
     # Token should expire in approximately 7 days
     time_diff = (exp_time - now).total_seconds() / 86400  # Convert to days

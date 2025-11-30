@@ -27,9 +27,7 @@ def get_dropdown_categories(db: Session = Depends(get_db)) -> list[str]:
 
 @router.get("/values/by-category", response_model=dict[str, list[DropdownValue]])
 def get_dropdown_values_by_category(
-    categories: list[str] | None = Query(
-        None, description="Specific categories to retrieve"
-    ),
+    categories: list[str] | None = Query(None, description="Specific categories to retrieve"),
     db: Session = Depends(get_db),
 ) -> dict[str, list[DropdownValue]]:
     """Get dropdown values grouped by category."""

@@ -90,9 +90,7 @@ class TestDashboardService:
         assert distribution.medium == 0
         assert distribution.low == 0
 
-    def test_get_risk_severity_distribution_with_data(
-        self, db_session, dashboard_sample_risks
-    ):
+    def test_get_risk_severity_distribution_with_data(self, db_session, dashboard_sample_risks):
         """Test _get_risk_severity_distribution with sample data."""
         service = DashboardService(db_session)
         active_risks = service._get_active_risks_query()
@@ -113,9 +111,7 @@ class TestDashboardService:
         assert isinstance(domain_risks, list)
         assert len(domain_risks) == 0
 
-    def test_get_technology_domain_risks_with_data(
-        self, db_session, dashboard_sample_risks
-    ):
+    def test_get_technology_domain_risks_with_data(self, db_session, dashboard_sample_risks):
         """Test _get_technology_domain_risks with sample data."""
         service = DashboardService(db_session)
         active_risks = service._get_active_risks_query()
@@ -196,9 +192,7 @@ class TestDashboardService:
         assert breakdown.transfer == 0
         assert breakdown.avoid == 0
 
-    def test_get_risk_response_breakdown_with_data(
-        self, db_session, dashboard_sample_risks
-    ):
+    def test_get_risk_response_breakdown_with_data(self, db_session, dashboard_sample_risks):
         """Test _get_risk_response_breakdown with sample data."""
         service = DashboardService(db_session)
         active_risks = service._get_active_risks_query()
@@ -219,9 +213,7 @@ class TestDashboardService:
         assert isinstance(exposure, Decimal)
         assert exposure == Decimal("0.00")
 
-    def test_get_total_financial_exposure_with_data(
-        self, db_session, dashboard_sample_risks
-    ):
+    def test_get_total_financial_exposure_with_data(self, db_session, dashboard_sample_risks):
         """Test _get_total_financial_exposure with sample data."""
         service = DashboardService(db_session)
         active_risks = service._get_active_risks_query()
@@ -239,9 +231,7 @@ class TestDashboardService:
         assert isinstance(avg_impact, Decimal)
         assert avg_impact == Decimal("0.00")
 
-    def test_get_average_financial_impact_with_data(
-        self, db_session, dashboard_sample_risks
-    ):
+    def test_get_average_financial_impact_with_data(self, db_session, dashboard_sample_risks):
         """Test _get_average_financial_impact with sample data."""
         service = DashboardService(db_session)
         active_risks = service._get_active_risks_query()
@@ -281,9 +271,7 @@ class TestDashboardService:
         assert exposure.percentage_risks_with_ibs_impact == 0.0
         assert exposure.critical_risks_affecting_ibs == 0
 
-    def test_get_business_service_exposure_with_data(
-        self, db_session, dashboard_sample_risks
-    ):
+    def test_get_business_service_exposure_with_data(self, db_session, dashboard_sample_risks):
         """Test _get_business_service_exposure with sample data."""
         service = DashboardService(db_session)
         active_risks = service._get_active_risks_query()

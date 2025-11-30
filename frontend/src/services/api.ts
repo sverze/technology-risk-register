@@ -28,8 +28,8 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout:
       signal: controller.signal,
     });
     return response;
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'AbortError') {
       throw new ApiError(408, 'Request timeout - please try again');
     }
     throw error;
@@ -42,7 +42,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   const url = `${API_BASE_URL}${endpoint}`;
 
   // Proactively ensure we have a valid token before making the request
-  let token = await ensureValidToken();
+  const token = await ensureValidToken();
 
   // If token refresh failed, redirect to login
   if (!token && getToken()) {
@@ -82,7 +82,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
         headers,
         ...options,
       });
-    } catch (error) {
+    } catch {
       // Refresh failed - redirect to login
       clearAuth();
       if (window.location.pathname !== '/login') {
@@ -317,5 +317,38 @@ export const healthApi = {
       throw new ApiError(response.status, `HTTP ${response.status}`);
     }
     return response.json();
+  },
+};
+
+// Chat API types
+export interface ChatRequest {
+  question: string;
+  model?: string;
+  temperature?: number;
+  show_code?: boolean;
+}
+
+export interface ChatResponse {
+  answer: string;
+  status: 'success' | 'no_results' | 'invalid_request' | 'error';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  answer_rows?: Array<Record<string, any>> | null;
+  code?: string | null;
+  error?: string | null;
+  execution_log?: string | null;
+}
+
+export const chatApi = {
+  // Send a chat message to the Risk SME agent
+  sendMessage: async (request: ChatRequest): Promise<ChatResponse> => {
+    return apiRequest<ChatResponse>('/chat/', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  },
+
+  // Health check for chat service
+  getChatHealth: async (): Promise<{ status: string; service: string; message: string }> => {
+    return apiRequest<{ status: string; service: string; message: string }>('/chat/health');
   },
 };

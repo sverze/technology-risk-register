@@ -20,56 +20,46 @@ import logging
 import re
 import sys
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-
 # Configuration
 DEFAULT_LOCAL_URL = "http://localhost:8080/api/v1"
 DEFAULT_GCP_URL = "https://technology-risk-register-bl7dub4c4a-uc.a.run.app/api/v1"
 
 # Business Disruption Matrix for net exposure calculation
-IMPACT_VALUES = {
-    "Low": 1,
-    "Moderate": 2,
-    "Major": 3,
-    "Catastrophic": 4
-}
+IMPACT_VALUES = {"Low": 1, "Moderate": 2, "Major": 3, "Catastrophic": 4}
 
-LIKELIHOOD_VALUES = {
-    "Remote": 1,
-    "Unlikely": 2,
-    "Possible": 3,
-    "Probable": 4
-}
+LIKELIHOOD_VALUES = {"Remote": 1, "Unlikely": 2, "Possible": 3, "Probable": 4}
 
 # Business Disruption Matrix (Impact × Likelihood → Score)
 EXPOSURE_MATRIX = {
-    (1, 1): 1,   # Low-Remote
-    (1, 2): 2,   # Low-Unlikely
-    (1, 3): 3,   # Low-Possible
-    (1, 4): 5,   # Low-Probable
-    (2, 1): 4,   # Moderate-Remote
-    (2, 2): 6,   # Moderate-Unlikely
-    (2, 3): 7,   # Moderate-Possible
-    (2, 4): 9,   # Moderate-Probable
-    (3, 1): 8,   # Major-Remote
+    (1, 1): 1,  # Low-Remote
+    (1, 2): 2,  # Low-Unlikely
+    (1, 3): 3,  # Low-Possible
+    (1, 4): 5,  # Low-Probable
+    (2, 1): 4,  # Moderate-Remote
+    (2, 2): 6,  # Moderate-Unlikely
+    (2, 3): 7,  # Moderate-Possible
+    (2, 4): 9,  # Moderate-Probable
+    (3, 1): 8,  # Major-Remote
     (3, 2): 10,  # Major-Unlikely
     (3, 3): 11,  # Major-Possible
     (3, 4): 13,  # Major-Probable
     (4, 1): 12,  # Catastrophic-Remote
     (4, 2): 14,  # Catastrophic-Unlikely
     (4, 3): 15,  # Catastrophic-Possible
-    (4, 4): 16   # Catastrophic-Probable
+    (4, 4): 16,  # Catastrophic-Probable
 }
 
 
 class RiskLoadingError(Exception):
     """Custom exception for risk loading errors"""
+
     pass
 
 
@@ -77,17 +67,14 @@ class RiskLoader:
     """Risk loading client with configurable endpoints"""
 
     def __init__(self, api_url: str, dry_run: bool = False, verbose: bool = False, force_update: bool = False):
-        self.api_url = api_url.rstrip('/')
+        self.api_url = api_url.rstrip("/")
         self.dry_run = dry_run
         self.verbose = verbose
         self.force_update = force_update
 
         # Setup logging
         log_level = logging.DEBUG if verbose else logging.INFO
-        logging.basicConfig(
-            level=log_level,
-            format='%(asctime)s - %(levelname)s - %(message)s'
-        )
+        logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s - %(message)s")
         self.logger = logging.getLogger(__name__)
 
         # Setup HTTP session with retries
@@ -96,7 +83,7 @@ class RiskLoader:
             total=3,
             status_forcelist=[429, 500, 502, 503, 504],
             allowed_methods=["HEAD", "GET", "OPTIONS", "POST", "PUT"],
-            backoff_factor=1
+            backoff_factor=1,
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount("http://", adapter)
@@ -109,7 +96,7 @@ class RiskLoader:
     def test_connection(self) -> bool:
         """Test connection to the API endpoint"""
         try:
-            health_url = self.api_url.replace('/api/v1', '/health')
+            health_url = self.api_url.replace("/api/v1", "/health")
             response = self.session.get(health_url, timeout=10)
             response.raise_for_status()
             self.logger.info("✓ API connection successful")
@@ -137,13 +124,13 @@ class RiskLoader:
 
         return f"{category} ({exposure_number})"
 
-    def parse_financial_amount(self, amount_str: str) -> Optional[float]:
+    def parse_financial_amount(self, amount_str: str) -> float | None:
         """Parse financial amounts from strings like '19,000,000'"""
-        if not amount_str or amount_str.upper() == 'TBC':
+        if not amount_str or amount_str.upper() == "TBC":
             return None
 
         # Remove commas and convert to float
-        cleaned = re.sub(r'[,\s]', '', str(amount_str))
+        cleaned = re.sub(r"[,\s]", "", str(amount_str))
         try:
             return float(cleaned)
         except ValueError:
@@ -160,58 +147,61 @@ class RiskLoader:
             self.logger.warning(f"Could not parse date: {date_str}")
             return date_str
 
-    def transform_risk_data(self, risk_data: Dict[str, Any]) -> Dict[str, Any]:
+    def transform_risk_data(self, risk_data: dict[str, Any]) -> dict[str, Any]:
         """Transform parsed risk data to API schema"""
 
         # Calculate net exposure
-        impact_rating = risk_data.get('Business Disruption Impact Rating', 'Low')
-        likelihood_rating = risk_data.get('Business Disruption Likelihood Rating', 'Remote')
+        impact_rating = risk_data.get("Business Disruption Impact Rating", "Low")
+        likelihood_rating = risk_data.get("Business Disruption Likelihood Rating", "Remote")
         net_exposure = self.calculate_net_exposure(impact_rating, likelihood_rating)
 
         # Build API payload
         api_data = {
-            "risk_id": risk_data.get('Risk ID'),
-            "risk_title": risk_data.get('Risk Title'),
-            "risk_category": risk_data.get('Risk Category'),
-            "risk_description": risk_data.get('Risk Description', ''),
-            "risk_status": risk_data.get('Risk Status', 'Active'),
-            "risk_response_strategy": risk_data.get('Risk Response Strategy', 'Mitigate'),
-            "planned_mitigations": risk_data.get('Planned Mitigations'),
-
+            "risk_id": risk_data.get("Risk ID"),
+            "risk_title": risk_data.get("Risk Title"),
+            "risk_category": risk_data.get("Risk Category"),
+            "risk_description": risk_data.get("Risk Description", ""),
+            "risk_status": risk_data.get("Risk Status", "Active"),
+            "risk_response_strategy": risk_data.get("Risk Response Strategy", "Mitigate"),
+            "planned_mitigations": risk_data.get("Planned Mitigations"),
             # Control fields - split coverage and effectiveness
-            "preventative_controls_coverage": risk_data.get('Preventative Controls Coverage', 'No Controls'),
-            "preventative_controls_effectiveness": risk_data.get('Preventative Controls Effectiveness', 'Not Possible to Assess'),
-            "preventative_controls_description": risk_data.get('Preventative Controls Description'),
-            "detective_controls_coverage": risk_data.get('Detective Controls Coverage', 'No Controls'),
-            "detective_controls_effectiveness": risk_data.get('Detective Controls Effectiveness', 'Not Possible to Assess'),
-            "detective_controls_description": risk_data.get('Detective Controls Description'),
-            "corrective_controls_coverage": risk_data.get('Corrective Controls Coverage', 'No Controls'),
-            "corrective_controls_effectiveness": risk_data.get('Corrective Controls Effectiveness', 'Not Possible to Assess'),
-            "corrective_controls_description": risk_data.get('Corrective Controls Description'),
-
+            "preventative_controls_coverage": risk_data.get("Preventative Controls Coverage", "No Controls"),
+            "preventative_controls_effectiveness": risk_data.get(
+                "Preventative Controls Effectiveness", "Not Possible to Assess"
+            ),
+            "preventative_controls_description": risk_data.get("Preventative Controls Description"),
+            "detective_controls_coverage": risk_data.get("Detective Controls Coverage", "No Controls"),
+            "detective_controls_effectiveness": risk_data.get(
+                "Detective Controls Effectiveness", "Not Possible to Assess"
+            ),
+            "detective_controls_description": risk_data.get("Detective Controls Description"),
+            "corrective_controls_coverage": risk_data.get("Corrective Controls Coverage", "No Controls"),
+            "corrective_controls_effectiveness": risk_data.get(
+                "Corrective Controls Effectiveness", "Not Possible to Assess"
+            ),
+            "corrective_controls_description": risk_data.get("Corrective Controls Description"),
             # Ownership & Systems
-            "risk_owner": risk_data.get('Risk Owner'),
-            "risk_owner_department": risk_data.get('Risk Owner Department'),
-            "systems_affected": risk_data.get('Systems Affected'),
-            "technology_domain": risk_data.get('Technology Domain'),
-
+            "risk_owner": risk_data.get("Risk Owner"),
+            "risk_owner_department": risk_data.get("Risk Owner Department"),
+            "systems_affected": risk_data.get("Systems Affected"),
+            "technology_domain": risk_data.get("Technology Domain"),
             # Business Disruption Assessment
-            "ibs_affected": risk_data.get('IBS Affected'),
+            "ibs_affected": risk_data.get("IBS Affected"),
             "business_disruption_impact_rating": impact_rating,
-            "business_disruption_impact_description": risk_data.get('Business Disruption Impact Description', ''),
+            "business_disruption_impact_description": risk_data.get("Business Disruption Impact Description", ""),
             "business_disruption_likelihood_rating": likelihood_rating,
-            "business_disruption_likelihood_description": risk_data.get('Business Disruption Likelihood Description', ''),
+            "business_disruption_likelihood_description": risk_data.get(
+                "Business Disruption Likelihood Description", ""
+            ),
             "business_disruption_net_exposure": net_exposure,
-
             # Financial Impact
-            "financial_impact_low": self.parse_financial_amount(risk_data.get('Financial Impact (Low)')),
-            "financial_impact_high": self.parse_financial_amount(risk_data.get('Financial Impact (High)')),
-            "financial_impact_notes": risk_data.get('Financial Impact Notes'),
-
+            "financial_impact_low": self.parse_financial_amount(risk_data.get("Financial Impact (Low)")),
+            "financial_impact_high": self.parse_financial_amount(risk_data.get("Financial Impact (High)")),
+            "financial_impact_notes": risk_data.get("Financial Impact Notes"),
             # Dates
-            "date_identified": self.parse_date(risk_data.get('Date Identified', '2025-01-01')),
-            "last_reviewed": self.parse_date(risk_data.get('Last Reviewed', '2025-01-01')),
-            "next_review_date": self.parse_date(risk_data.get('Next Review Date', '2025-01-01')),
+            "date_identified": self.parse_date(risk_data.get("Date Identified", "2025-01-01")),
+            "last_reviewed": self.parse_date(risk_data.get("Last Reviewed", "2025-01-01")),
+            "next_review_date": self.parse_date(risk_data.get("Next Review Date", "2025-01-01")),
         }
 
         # Remove None values
@@ -220,13 +210,13 @@ class RiskLoader:
     def check_risk_exists(self, risk_id: str) -> bool:
         """Check if a risk already exists in the system"""
         try:
-            get_url = urljoin(self.api_url + '/', f'risks/{risk_id}')
+            get_url = urljoin(self.api_url + "/", f"risks/{risk_id}")
             response = self.session.get(get_url, timeout=30)
             return response.status_code == 200
         except requests.exceptions.RequestException:
             return False
 
-    def update_risk(self, risk_id: str, risk_data: Dict[str, Any]) -> Dict[str, Any]:
+    def update_risk(self, risk_id: str, risk_data: dict[str, Any]) -> dict[str, Any]:
         """Update an existing risk via PUT"""
         try:
             # Transform data for API
@@ -236,12 +226,9 @@ class RiskLoader:
                 self.logger.debug(f"UPDATE API payload for {risk_id}: {json.dumps(api_payload, indent=2)}")
 
             # PUT to API
-            update_url = urljoin(self.api_url + '/', f'risks/{risk_id}')
+            update_url = urljoin(self.api_url + "/", f"risks/{risk_id}")
             response = self.session.put(
-                update_url,
-                json=api_payload,
-                headers={'Content-Type': 'application/json'},
-                timeout=30
+                update_url, json=api_payload, headers={"Content-Type": "application/json"}, timeout=30
             )
 
             response.raise_for_status()
@@ -252,19 +239,19 @@ class RiskLoader:
 
         except requests.exceptions.RequestException as e:
             error_msg = f"API update failed for {risk_id}: {e}"
-            if hasattr(e, 'response') and e.response is not None:
+            if hasattr(e, "response") and e.response is not None:
                 try:
                     error_detail = e.response.json()
                     error_msg += f" - {error_detail}"
-                except:
+                except Exception:
                     error_msg += f" - {e.response.text[:200]}"
 
             self.logger.error(f"✗ {error_msg}")
             return {"status": "error", "risk_id": risk_id, "error": error_msg}
 
-    def load_risk(self, risk_data: Dict[str, Any]) -> Dict[str, Any]:
+    def load_risk(self, risk_data: dict[str, Any]) -> dict[str, Any]:
         """Load a single risk via API with upsert logic"""
-        risk_id = risk_data.get('Risk ID', 'Unknown')
+        risk_id = risk_data.get("Risk ID", "Unknown")
 
         if self.dry_run:
             exists = self.check_risk_exists(risk_id)
@@ -291,12 +278,9 @@ class RiskLoader:
                     self.logger.debug(f"CREATE API payload for {risk_id}: {json.dumps(api_payload, indent=2)}")
 
                 # Post to API
-                create_url = urljoin(self.api_url + '/', 'risks/')
+                create_url = urljoin(self.api_url + "/", "risks/")
                 response = self.session.post(
-                    create_url,
-                    json=api_payload,
-                    headers={'Content-Type': 'application/json'},
-                    timeout=30
+                    create_url, json=api_payload, headers={"Content-Type": "application/json"}, timeout=30
                 )
 
                 response.raise_for_status()
@@ -307,29 +291,29 @@ class RiskLoader:
 
             except requests.exceptions.RequestException as e:
                 # Check if it's a duplicate key error (risk was created between our check and create)
-                if hasattr(e, 'response') and e.response is not None and e.response.status_code == 400:
+                if hasattr(e, "response") and e.response is not None and e.response.status_code == 400:
                     try:
                         error_detail = e.response.json()
                         error_text = str(error_detail).lower()
-                        if 'unique' in error_text or 'duplicate' in error_text or 'already exists' in error_text:
+                        if "unique" in error_text or "duplicate" in error_text or "already exists" in error_text:
                             self.logger.info(f"⚠ Risk {risk_id} was created by another process, attempting update...")
                             return self.update_risk(risk_id, risk_data)
-                    except:
+                    except Exception:
                         pass
 
                 error_msg = f"API request failed for {risk_id}: {e}"
-                if hasattr(e, 'response') and e.response is not None:
+                if hasattr(e, "response") and e.response is not None:
                     try:
                         error_detail = e.response.json()
                         error_msg += f" - {error_detail}"
-                    except:
+                    except Exception:
                         error_msg += f" - {e.response.text[:200]}"
 
                 self.logger.error(f"✗ {error_msg}")
                 return {"status": "error", "risk_id": risk_id, "error": error_msg}
 
 
-def get_risk_data() -> List[Dict[str, Any]]:
+def get_risk_data() -> list[dict[str, Any]]:
     """Get the 11 technology risks data"""
     return [
         {
@@ -363,7 +347,7 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "TBC",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-10-08"
+            "Next Review Date": "2025-10-08",
         },
         {
             "Risk ID": "TR-2025-002",
@@ -396,7 +380,7 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "Migration to 10.x network, dedicated node pools for critical workloads, comprehensive testing environment, chaos engineering implementation",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-10-08"
+            "Next Review Date": "2025-10-08",
         },
         {
             "Risk ID": "TR-2025-003",
@@ -429,7 +413,7 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "Convert Okta from broker/bridge to secondary IdP, implement comprehensive break-glass procedures, deploy synthetic authentication monitoring.",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-10-08"
+            "Next Review Date": "2025-10-08",
         },
         {
             "Risk ID": "TR-2025-004",
@@ -462,7 +446,7 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "Private connectivity implementation, redundant network paths, address network SME skill gaps",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-12-08"
+            "Next Review Date": "2025-12-08",
         },
         {
             "Risk ID": "TR-2025-005",
@@ -495,7 +479,7 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "Cloud-agnostic observability platform, centralised log aggregation, Azure Service Health API integration",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-12-08"
+            "Next Review Date": "2025-12-08",
         },
         {
             "Risk ID": "TR-2025-006",
@@ -528,7 +512,7 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "Multi-zone HA deployment, migration to managed database services, automated scaling, operational excellence framework",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-10-08"
+            "Next Review Date": "2025-10-08",
         },
         {
             "Risk ID": "TR-2025-007",
@@ -561,7 +545,7 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "Formal DR testing procedures, chaos engineering implementation, regular testing schedule, RTO/RPO definition",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-10-08"
+            "Next Review Date": "2025-10-08",
         },
         {
             "Risk ID": "TR-2025-008",
@@ -594,7 +578,7 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "Vendor risk assessments, alternative provider evaluation, enhanced monitoring, TPRM framework implementation",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-12-08"
+            "Next Review Date": "2025-12-08",
         },
         {
             "Risk ID": "TR-2025-009",
@@ -627,7 +611,7 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "No mitigation planned",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-12-08"
+            "Next Review Date": "2025-12-08",
         },
         {
             "Risk ID": "TR-2025-010",
@@ -660,7 +644,7 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "Algo: DR testing, resilience validation, fault tolerance patterns. DSS: Observability implementation, SLO definition, DR procedures. KiWeb: Ownership resolution, fault tolerance, DR implementation. GKE: Reliability targets, testing environments, resource governance. Application-specific operational excellence. Tyche and Phinsys: need to complete migration with signed off DR execution etc",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-10-08"
+            "Next Review Date": "2025-10-08",
         },
         {
             "Risk ID": "TR-2025-011",
@@ -693,8 +677,8 @@ def get_risk_data() -> List[Dict[str, Any]]:
             "Planned Mitigations": "Complete Project Sentinel BCP development, establish crisis communication frameworks, pre-contract emergency vendors, integrate technical and operational response procedures",
             "Date Identified": "2025-08-28",
             "Last Reviewed": "2025-09-08",
-            "Next Review Date": "2025-10-08"
-        }
+            "Next Review Date": "2025-10-08",
+        },
     ]
 
 
@@ -711,27 +695,24 @@ Examples:
   %(prog)s --prod --dry-run                     # Validate without posting
   %(prog)s --local --risk-ids TR-2025-001       # Load specific risk
   %(prog)s --prod --force-update                # Always update existing risks
-        """
+        """,
     )
 
     # Environment selection (mutually exclusive)
     env_group = parser.add_mutually_exclusive_group()
-    env_group.add_argument('--local', action='store_true',
-                          help='Load to local development environment (localhost:8008)')
-    env_group.add_argument('--prod', action='store_true',
-                          help='Load to GCP production environment')
-    env_group.add_argument('--api-url', type=str,
-                          help='Custom API base URL (e.g., https://api.example.com/api/v1)')
+    env_group.add_argument(
+        "--local", action="store_true", help="Load to local development environment (localhost:8008)"
+    )
+    env_group.add_argument("--prod", action="store_true", help="Load to GCP production environment")
+    env_group.add_argument("--api-url", type=str, help="Custom API base URL (e.g., https://api.example.com/api/v1)")
 
     # Options
-    parser.add_argument('--dry-run', action='store_true',
-                       help='Validate data without posting to API')
-    parser.add_argument('--verbose', '-v', action='store_true',
-                       help='Enable verbose logging')
-    parser.add_argument('--risk-ids', type=str,
-                       help='Comma-separated list of specific risk IDs to load')
-    parser.add_argument('--force-update', action='store_true',
-                       help='Always update existing risks instead of skipping them')
+    parser.add_argument("--dry-run", action="store_true", help="Validate data without posting to API")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
+    parser.add_argument("--risk-ids", type=str, help="Comma-separated list of specific risk IDs to load")
+    parser.add_argument(
+        "--force-update", action="store_true", help="Always update existing risks instead of skipping them"
+    )
 
     args = parser.parse_args()
 
@@ -747,7 +728,7 @@ Examples:
         api_url = DEFAULT_LOCAL_URL
         print("No environment specified, defaulting to --local")
 
-    print(f"Risk Register Loading Tool")
+    print("Risk Register Loading Tool")
     print(f"Target: {api_url}")
     print(f"Mode: {'DRY RUN' if args.dry_run else 'LIVE'}")
     print("-" * 50)
@@ -769,8 +750,8 @@ Examples:
 
     # Filter risks if specific IDs requested
     if args.risk_ids:
-        requested_ids = [rid.strip() for rid in args.risk_ids.split(',')]
-        risks = [r for r in risks if r.get('Risk ID') in requested_ids]
+        requested_ids = [rid.strip() for rid in args.risk_ids.split(",")]
+        risks = [r for r in risks if r.get("Risk ID") in requested_ids]
         print(f"Loading {len(risks)} specific risks: {requested_ids}")
     else:
         print(f"Loading {len(risks)} risks")
@@ -778,7 +759,7 @@ Examples:
     # Load risks
     results = []
     for i, risk in enumerate(risks, 1):
-        risk_id = risk.get('Risk ID', f'Risk-{i}')
+        risk_id = risk.get("Risk ID", f"Risk-{i}")
         print(f"[{i}/{len(risks)}] Processing {risk_id}...")
 
         result = loader.load_risk(risk)
@@ -789,10 +770,10 @@ Examples:
     print("LOADING SUMMARY")
     print("=" * 50)
 
-    successful = len([r for r in results if r['status'] == 'success'])
-    errors = len([r for r in results if r['status'] == 'error'])
-    dry_runs = len([r for r in results if r['status'] == 'dry_run'])
-    skipped = len([r for r in results if r['status'] == 'skipped'])
+    successful = len([r for r in results if r["status"] == "success"])
+    errors = len([r for r in results if r["status"] == "error"])
+    dry_runs = len([r for r in results if r["status"] == "dry_run"])
+    skipped = len([r for r in results if r["status"] == "skipped"])
 
     print(f"Total processed: {len(results)}")
     print(f"Successful: {successful}")
@@ -804,25 +785,25 @@ Examples:
 
     # Show actions breakdown for successful operations
     if successful > 0:
-        created = len([r for r in results if r['status'] == 'success' and r.get('action') == 'created'])
-        updated = len([r for r in results if r['status'] == 'success' and r.get('action') == 'updated'])
+        created = len([r for r in results if r["status"] == "success" and r.get("action") == "created"])
+        updated = len([r for r in results if r["status"] == "success" and r.get("action") == "updated"])
         if created > 0:
             print(f"  - Created: {created}")
         if updated > 0:
             print(f"  - Updated: {updated}")
 
     # Show errors
-    error_results = [r for r in results if r['status'] == 'error']
+    error_results = [r for r in results if r["status"] == "error"]
     if error_results:
-        print(f"\nErrors:")
+        print("\nErrors:")
         for result in error_results:
             print(f"  - {result['risk_id']}: {result['error']}")
 
-    print(f"\nCompleted!")
+    print("\nCompleted!")
 
     # Exit with error code if there were failures
     sys.exit(1 if errors > 0 else 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

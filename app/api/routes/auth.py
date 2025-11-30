@@ -8,10 +8,8 @@ from app.core.config import settings
 from app.core.security import (
     create_access_token,
     create_refresh_token,
-    decode_access_token,
     decode_refresh_token,
     get_current_user,
-    verify_password,
 )
 
 router = APIRouter()
@@ -137,7 +135,7 @@ async def refresh_access_token(request: RefreshRequest) -> AccessTokenResponse:
     """
     # Decode and validate refresh token
     payload = decode_refresh_token(request.refresh_token)
-    username: str = payload.get("sub")
+    username: str | None = payload.get("sub")
 
     if username is None:
         raise HTTPException(

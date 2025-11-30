@@ -8,16 +8,14 @@ class DropdownService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_dropdown_values(
-        self, category: str | None = None
-    ) -> list[DropdownValueSchema]:
+    def get_dropdown_values(self, category: str | None = None) -> list[DropdownValueSchema]:
         """Get dropdown values, optionally filtered by category."""
         query = self.db.query(DropdownValue).filter(DropdownValue.is_active)
 
         if category:
             query = query.filter(DropdownValue.category == category)
 
-        return query.order_by(DropdownValue.display_order, DropdownValue.value).all()
+        return query.order_by(DropdownValue.display_order, DropdownValue.value).all()  # type: ignore[return-value]
 
     def get_dropdown_categories(self) -> list[str]:
         """Get all available dropdown categories."""
@@ -36,22 +34,19 @@ class DropdownService:
         """Get dropdown values grouped by category."""
         if categories:
             # Get specific categories
-            query = self.db.query(DropdownValue).filter(
-                DropdownValue.is_active, DropdownValue.category.in_(categories)
-            )
+            query = self.db.query(DropdownValue).filter(DropdownValue.is_active, DropdownValue.category.in_(categories))
         else:
             # Get all categories
             query = self.db.query(DropdownValue).filter(DropdownValue.is_active)
 
-        dropdown_values = query.order_by(
-            DropdownValue.category, DropdownValue.display_order, DropdownValue.value
-        ).all()
+        dropdown_values = query.order_by(DropdownValue.category, DropdownValue.display_order, DropdownValue.value).all()
 
         # Group by category
-        result = {}
+        result: dict[str, list[DropdownValueSchema]] = {}
         for dropdown_value in dropdown_values:
-            if dropdown_value.category not in result:
-                result[dropdown_value.category] = []
-            result[dropdown_value.category].append(dropdown_value)
+            cat = str(dropdown_value.category)
+            if cat not in result:
+                result[cat] = []
+            result[cat].append(dropdown_value)  # type: ignore[arg-type]
 
         return result
