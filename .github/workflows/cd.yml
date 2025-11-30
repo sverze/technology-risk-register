@@ -228,12 +228,14 @@ jobs:
           cat payload.json
 
       - name: Trigger Harness webhook
-        if: vars.HARNESS_WEBHOOK_URL != ''
+        if: secrets.HARNESS_WEBHOOK_URL != ''
+        env:
+          HARNESS_WEBHOOK_URL: ${{ secrets.HARNESS_WEBHOOK_URL }}
         run: |
           response=$(curl -s -w "\n%{http_code}" -X POST \
             -H "Content-Type: application/json" \
             -d @payload.json \
-            "${{ secrets.HARNESS_WEBHOOK_URL }}")
+            "$HARNESS_WEBHOOK_URL")
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
@@ -250,7 +252,7 @@ jobs:
           fi
 
       - name: Skip Harness trigger
-        if: vars.HARNESS_WEBHOOK_URL == ''
+        if: secrets.HARNESS_WEBHOOK_URL == ''
         run: |
           echo "⚠️  HARNESS_WEBHOOK_URL not configured - skipping deployment trigger"
           echo "Configure the secret in repository settings to enable automatic deployments"
