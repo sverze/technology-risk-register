@@ -228,10 +228,19 @@ jobs:
           cat payload.json
 
       - name: Trigger Harness webhook
-        if: secrets.HARNESS_WEBHOOK_URL != ''
         env:
           HARNESS_WEBHOOK_URL: ${{ secrets.HARNESS_WEBHOOK_URL }}
         run: |
+          if [ -z "$HARNESS_WEBHOOK_URL" ]; then
+            echo "⚠️  HARNESS_WEBHOOK_URL not configured - skipping deployment trigger"
+            echo "Configure the secret in repository settings to enable automatic deployments"
+            echo ""
+            echo "Deployment artifacts ready:"
+            echo "  Backend: ${{ needs.build-push-backend.outputs.image_tag }}"
+            echo "  Frontend: Run ID ${{ needs.build-upload-frontend.outputs.artifact_run_id }}"
+            exit 0
+          fi
+
           response=$(curl -s -w "\n%{http_code}" -X POST \
             -H "Content-Type: application/json" \
             -d @payload.json \
@@ -250,13 +259,3 @@ jobs:
             echo "❌ Failed to trigger Harness deployment (HTTP $http_code)"
             exit 1
           fi
-
-      - name: Skip Harness trigger
-        if: secrets.HARNESS_WEBHOOK_URL == ''
-        run: |
-          echo "⚠️  HARNESS_WEBHOOK_URL not configured - skipping deployment trigger"
-          echo "Configure the secret in repository settings to enable automatic deployments"
-          echo ""
-          echo "Deployment artifacts ready:"
-          echo "  Backend: ${{ needs.build-push-backend.outputs.image_tag }}"
-          echo "  Frontend: Run ID ${{ needs.build-upload-frontend.outputs.artifact_run_id }}"
