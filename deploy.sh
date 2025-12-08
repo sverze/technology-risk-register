@@ -239,6 +239,9 @@ gcloud run deploy technology-risk-register \
     --cpu 1 \
     --min-instances 0 \
     --max-instances 10 \
+    --timeout=300 \
+    --startup-cpu-boost \
+    --cpu-throttling \
     --set-env-vars "$ENV_VARS"
 
 # Get the service URL
