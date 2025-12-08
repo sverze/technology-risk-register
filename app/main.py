@@ -29,40 +29,50 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 def startup_event() -> None:
     """Initialize database on startup."""
     import logging
+    import time
 
     logger = logging.getLogger(__name__)
 
-    logger.info("Starting application startup...")
+    start_time = time.time()
+    logger.info("🚀 Starting application startup...")
 
     # Download database from Cloud Storage if available (with short timeout)
     try:
-        logger.info("Attempting Cloud Storage sync...")
+        logger.info("📥 Attempting Cloud Storage sync...")
+        sync_start = time.time()
         cloud_storage_service.sync_database_from_cloud(timeout_seconds=15)
+        logger.info(f"✅ Cloud Storage sync completed in {time.time() - sync_start:.2f}s")
     except Exception as e:
-        logger.warning(f"Cloud Storage sync failed, continuing with local database: {e}")
+        logger.warning(f"⚠️  Cloud Storage sync failed, continuing with local database: {e}")
 
-    logger.info("Creating database tables...")
+    logger.info("📊 Creating database tables...")
+    table_start = time.time()
     create_tables()
+    logger.info(f"✅ Tables created in {time.time() - table_start:.2f}s")
 
     # Seed dropdown values and sample risks
-    logger.info("Seeding database...")
+    logger.info("🌱 Seeding database...")
+    seed_start = time.time()
     db = next(get_db())
     try:
         seed_dropdown_values(db)
-        # Temporarily skip sample risk seeding to fix startup issue
-        # seed_sample_risks(db)
-        logger.info("Database seeding completed (risk log entries skipped for debugging)")
+        logger.info(f"✅ Database seeding completed in {time.time() - seed_start:.2f}s")
 
         # Upload database to Cloud Storage after seeding (if needed)
-        try:
-            cloud_storage_service.upload_database()
-            logger.info("Database uploaded to Cloud Storage")
-        except Exception as e:
-            logger.warning(f"Failed to upload database to Cloud Storage: {e}")
+        # Skip initial upload to speed up startup - will happen on first write
+        # try:
+        #     cloud_storage_service.upload_database()
+        #     logger.info("Database uploaded to Cloud Storage")
+        # except Exception as e:
+        #     logger.warning(f"Failed to upload database to Cloud Storage: {e}")
+    except Exception as e:
+        logger.error(f"❌ Database seeding failed: {e}")
+        raise
     finally:
         db.close()
 
-    logger.info("Application startup completed successfully")
+    total_time = time.time() - start_time
+    logger.info(f"✅ Application startup completed successfully in {total_time:.2f}s")
 
 
 @app.get("/")
