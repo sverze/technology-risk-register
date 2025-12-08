@@ -282,29 +282,46 @@ jobs:
       - name: Deploy to Cloud Run
         id: deploy
         run: |
-          gcloud run deploy technology-risk-register \
-            --image ${{ needs.build-push-backend.outputs.ar_image_tag }} \
-            --platform managed \
-            --region ${{ secrets.GCP_REGION }} \
-            --allow-unauthenticated \
-            --port 8080 \
-            --memory 512Mi \
-            --cpu 1 \
-            --min-instances 0 \
-            --max-instances 10 \
-            --set-env-vars "GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},ENVIRONMENT=production,ALLOWED_ORIGINS=*,DATABASE_URL=sqlite:///./risk_register.db,GCP_BUCKET_NAME=${{ secrets.GCP_PROJECT_ID }}-technology-risk-register-database,AUTH_USERNAME=admin,AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }},AUTH_SECRET_KEY=${{ secrets.AUTH_SECRET_KEY }},ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}"
+          cat <<EOF > payload.json
+          {
+            "event": "github_deployment",
+            "repository": "${{ github.repository }}",
+            "commit_sha": "${{ github.sha }}",
+            "commit_message": "${{ github.event.head_commit.message }}",
+            "triggered_by": "${{ github.actor }}",
+            "backend_image": "${{ needs.build-push-backend.outputs.image_tag }}",
+            "backend_image_tag": "main-${{ needs.build-push-backend.outputs.short_sha }}",
+            "frontend_artifact_run_id": "${{ needs.build-upload-frontend.outputs.artifact_run_id }}",
+            "frontend_artifact_name": "frontend-dist-${{ github.sha }}",
+            "frontend_artifact_url": "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workflow_run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "environment": "${{ inputs.environment || 'production' }}"
+          }
+          EOF
+          cat payload.json
 
-          # Get the service URL
-          SERVICE_URL=$(gcloud run services describe technology-risk-register \
-            --region=${{ secrets.GCP_REGION }} \
-            --format='value(status.url)')
-
-          echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
-          echo "✅ Backend deployed successfully to: $SERVICE_URL"
-      - name: Health check
+      - name: Trigger Harness webhook
+        env:
+          HARNESS_WEBHOOK_URL: ${{ secrets.HARNESS_WEBHOOK_URL }}
         run: |
-          SERVICE_URL="${{ steps.deploy.outputs.service_url }}"
-          echo "Testing backend health endpoint..."
+          if [ -z "$HARNESS_WEBHOOK_URL" ]; then
+            echo "⚠️  HARNESS_WEBHOOK_URL not configured - skipping deployment trigger"
+            echo "Configure the secret in repository settings to enable automatic deployments"
+            echo ""
+            echo "Deployment artifacts ready:"
+            echo "  Backend: ${{ needs.build-push-backend.outputs.image_tag }}"
+            echo "  Frontend: Run ID ${{ needs.build-upload-frontend.outputs.artifact_run_id }}"
+            exit 0
+          fi
+
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "$HARNESS_WEBHOOK_URL")
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
 
           # Wait a few seconds for service to be fully ready
           sleep 10
@@ -317,75 +334,3 @@ jobs:
             echo "⚠️  Health check failed, but deployment may still be successful"
             echo "Check logs: gcloud run services logs tail technology-risk-register --region=${{ secrets.GCP_REGION }}"
           fi
-
-    outputs:
-      service_url: ${{ steps.deploy.outputs.service_url }}
-
-  deploy-frontend:
-    name: Deploy Frontend to Cloud Storage
-    runs-on: ubuntu-latest
-    needs: [build-upload-frontend, deploy-backend]
-    if: success() && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist-${{ github.sha }}
-          path: frontend-dist
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Upload to Cloud Storage
-        run: |
-          # Upload all files to Cloud Storage bucket
-          gsutil -m rsync -r -d frontend-dist gs://${{ secrets.GCP_ASSETS_BUCKET }}
-
-          echo "✅ Files uploaded to Cloud Storage"
-
-      - name: Set cache headers
-        run: |
-          # CSS files - cache for 1 year
-          gsutil -m setmeta -h "Cache-Control:public,max-age=31536000,immutable" \
-            "gs://${{ secrets.GCP_ASSETS_BUCKET }}/assets/*.css" || echo "No CSS files to set headers"
-
-          # JS files - cache for 1 year
-          gsutil -m setmeta -h "Cache-Control:public,max-age=31536000,immutable" \
-            "gs://${{ secrets.GCP_ASSETS_BUCKET }}/assets/*.js" || echo "No JS files to set headers"
-
-          # SVG files - cache for 1 year
-          gsutil -m setmeta -h "Cache-Control:public,max-age=31536000,immutable" \
-            "gs://${{ secrets.GCP_ASSETS_BUCKET }}/assets/*.svg" || echo "No SVG files to set headers"
-
-          # HTML files - cache for 1 hour
-          gsutil -m setmeta -h "Cache-Control:public,max-age=3600,must-revalidate" \
-            "gs://${{ secrets.GCP_ASSETS_BUCKET }}/*.html" || echo "No HTML files to set headers"
-
-          echo "✅ Cache headers configured"
-
-      - name: Output deployment info
-        run: |
-          echo "=========================================="
-          echo "  Deployment Complete! ✓"
-          echo "=========================================="
-          echo ""
-          echo "Backend:"
-          echo "  Service URL: ${{ needs.deploy-backend.outputs.service_url }}"
-          echo "  API Docs: ${{ needs.deploy-backend.outputs.service_url }}/docs"
-          echo "  Health: ${{ needs.deploy-backend.outputs.service_url }}/health"
-          echo ""
-          echo "Frontend:"
-          echo "  Storage Bucket: gs://${{ secrets.GCP_ASSETS_BUCKET }}"
-          echo "  Access via Load Balancer or configured domain"
-          echo ""
-          echo "Deployment Info:"
-          echo "  Commit: ${{ github.sha }}"
-          echo "  Triggered by: ${{ github.actor }}"
-          echo "  Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
