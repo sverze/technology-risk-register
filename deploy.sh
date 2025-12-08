@@ -240,7 +240,7 @@ gcloud run deploy technology-risk-register \
     --min-instances 0 \
     --max-instances 10 \
     --timeout=300 \
-    --startup-cpu-boost \
+    --cpu-boost \
     --cpu-throttling \
     --set-env-vars "$ENV_VARS"
 
