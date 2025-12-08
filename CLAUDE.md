@@ -58,6 +58,49 @@ docker-compose down -v
 ```
 
 ### GCP Deployment
+
+#### Automated Deployment (GitHub Actions - Recommended)
+
+**Prerequisites** (one-time setup):
+```bash
+# 1. Create GCP service account and configure IAM roles
+./setup-gcp-service-account.sh --project-id your-gcp-project-id
+
+# 2. Add required secrets to GitHub repository settings:
+#    - GCP_PROJECT_ID
+#    - GCP_SA_KEY (JSON key from step 1)
+#    - GCP_REGION (e.g., us-central1)
+#    - GCP_ARTIFACT_REGISTRY
+#    - GCP_ASSETS_BUCKET
+#    - AUTH_PASSWORD
+#    - AUTH_SECRET_KEY (generate with: openssl rand -hex 32)
+#    - ANTHROPIC_API_KEY
+```
+
+**Deployment Process**:
+- Push to `main` branch → Automatic deployment to production
+- GitHub Actions workflow:
+  1. Lint & test backend and frontend
+  2. Build Docker image → Push to Artifact Registry
+  3. Deploy backend → Cloud Run
+  4. Build frontend with backend API URL
+  5. Deploy frontend → Cloud Storage
+  6. Health checks and validation
+
+**Monitoring**:
+```bash
+# View Cloud Run logs
+gcloud run services logs tail technology-risk-register --region=us-central1
+
+# Check deployment status
+gcloud run services describe technology-risk-register --region=us-central1
+
+# View GitHub Actions workflow runs
+# Go to: https://github.com/YOUR_REPO/actions
+```
+
+#### Manual Deployment (Fallback)
+
 ```bash
 # Quick deployment to GCP (after setting up gcloud auth)
 ./deploy.sh --project-id your-gcp-project-id
@@ -76,10 +119,26 @@ terraform apply -var="project_id=your-project-id"
 
 # Manual Cloud Run deployment
 make deploy  # (from terraform directory)
-
-# View logs from deployed service
-gcloud run services logs tail technology-risk-register --region=us-central1
 ```
+
+#### Deployment Architecture
+
+**Backend** (Cloud Run):
+- Docker image from Artifact Registry
+- Auto-scaling: 0-10 instances
+- Memory: 512Mi, CPU: 1
+- Port: 8080
+- Database: SQLite synced to Cloud Storage
+
+**Frontend** (Cloud Storage + CDN):
+- Static files hosted in Cloud Storage bucket
+- CDN caching: 1 year for assets, 1 hour for HTML
+- Served via Load Balancer with API proxying
+
+**Database Persistence**:
+- SQLite file backed up to Cloud Storage on every write
+- Automatic download on container startup
+- Versioned (5 versions retained for 30 days)
 
 ## Architecture Overview
 

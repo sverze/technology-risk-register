@@ -114,6 +114,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
 
     steps:
       - name: Checkout repository
@@ -128,6 +129,18 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
 
       - name: Extract metadata (tags, labels)
         id: meta
@@ -149,14 +162,41 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Tag and push to Artifact Registry
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          GHCR_IMAGE="ghcr.io/${{ github.repository }}:main-$SHORT_SHA"
+          AR_IMAGE="${{ secrets.GCP_ARTIFACT_REGISTRY }}/technology-risk-register"
+
+          # Pull from GHCR
+          docker pull $GHCR_IMAGE
+
+          # Tag for Artifact Registry
+          docker tag $GHCR_IMAGE $AR_IMAGE:latest
+          docker tag $GHCR_IMAGE $AR_IMAGE:main-$SHORT_SHA
+          docker tag $GHCR_IMAGE $AR_IMAGE:sha-$SHORT_SHA
+
+          # Push to Artifact Registry
+          docker push $AR_IMAGE:latest
+          docker push $AR_IMAGE:main-$SHORT_SHA
+          docker push $AR_IMAGE:sha-$SHORT_SHA
+
+          echo "Pushed images to Artifact Registry:"
+          echo "  - $AR_IMAGE:latest"
+          echo "  - $AR_IMAGE:main-$SHORT_SHA"
+          echo "  - $AR_IMAGE:sha-$SHORT_SHA"
+
       - name: Output image tags
         id: image-tags
         run: |
-          echo "short_sha=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-          echo "main_tag=ghcr.io/${{ github.repository }}:main-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "ghcr_tag=ghcr.io/${{ github.repository }}:main-$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "ar_tag=${{ secrets.GCP_ARTIFACT_REGISTRY }}/technology-risk-register:main-$SHORT_SHA" >> $GITHUB_OUTPUT
 
     outputs:
-      image_tag: ${{ steps.image-tags.outputs.main_tag }}
+      image_tag: ${{ steps.image-tags.outputs.ghcr_tag }}
+      ar_image_tag: ${{ steps.image-tags.outputs.ar_tag }}
       short_sha: ${{ steps.image-tags.outputs.short_sha }}
 
   build-upload-frontend:
@@ -167,6 +207,29 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get Cloud Run service URL
+        id: get-backend-url
+        run: |
+          SERVICE_URL=$(gcloud run services describe technology-risk-register \
+            --region=${{ secrets.GCP_REGION }} \
+            --format='value(status.url)' || echo "")
+
+          if [ -z "$SERVICE_URL" ]; then
+            echo "⚠️  Cloud Run service not found, using placeholder URL"
+            SERVICE_URL="https://technology-risk-register-placeholder.a.run.app"
+          fi
+
+          echo "backend_url=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "Building frontend with API base URL: $SERVICE_URL"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -180,6 +243,8 @@ jobs:
         working-directory: frontend
 
       - name: Build frontend
+        env:
+          VITE_API_BASE_URL: ${{ steps.get-backend-url.outputs.backend_url }}
         run: npm run build
         working-directory: frontend
 
@@ -197,36 +262,39 @@ jobs:
 
     outputs:
       artifact_run_id: ${{ steps.artifact-url.outputs.run_id }}
+      backend_url: ${{ steps.get-backend-url.outputs.backend_url }}
 
-  trigger-harness:
-    name: Trigger Harness Deployment
+  deploy-backend:
+    name: Deploy Backend to Cloud Run
     runs-on: ubuntu-latest
-    needs: [build-push-backend, build-upload-frontend]
-    if: success()
+    needs: [build-push-backend, test-backend]
+    if: success() && github.ref == 'refs/heads/main'
 
     steps:
-      - name: Prepare deployment payload
-        id: payload
-        run: |
-          cat <<EOF > payload.json
-          {
-            "event": "github_deployment",
-            "repository": "${{ github.repository }}",
-            "commit_sha": "${{ github.sha }}",
-            "commit_message": "${{ github.event.head_commit.message }}",
-            "triggered_by": "${{ github.actor }}",
-            "backend_image": "${{ needs.build-push-backend.outputs.image_tag }}",
-            "backend_image_tag": "main-${{ needs.build-push-backend.outputs.short_sha }}",
-            "frontend_artifact_run_id": "${{ needs.build-upload-frontend.outputs.artifact_run_id }}",
-            "frontend_artifact_name": "frontend-dist-${{ github.sha }}",
-            "frontend_artifact_url": "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts",
-            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "workflow_run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-            "environment": "${{ inputs.environment || 'production' }}"
-          }
-          EOF
-          cat payload.json
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        run: |
+          gcloud run deploy technology-risk-register \
+            --image ${{ needs.build-push-backend.outputs.ar_image_tag }} \
+            --platform managed \
+            --region ${{ secrets.GCP_REGION }} \
+            --allow-unauthenticated \
+            --port 8080 \
+            --memory 512Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --set-env-vars "GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},ENVIRONMENT=production,ALLOWED_ORIGINS=*,DATABASE_URL=sqlite:///./risk_register.db,GCP_BUCKET_NAME=${{ secrets.GCP_PROJECT_ID }}-technology-risk-register-database,AUTH_USERNAME=admin,AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }},AUTH_SECRET_KEY=${{ secrets.AUTH_SECRET_KEY }},ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}"
+
+<<<<<<< Updated upstream
       - name: Trigger Harness webhook
         if: vars.HARNESS_WEBHOOK_URL != ''
         run: |
@@ -234,21 +302,34 @@ jobs:
             -H "Content-Type: application/json" \
             -d @payload.json \
             "${{ secrets.HARNESS_WEBHOOK_URL }}")
+=======
+          # Get the service URL
+          SERVICE_URL=$(gcloud run services describe technology-risk-register \
+            --region=${{ secrets.GCP_REGION }} \
+            --format='value(status.url)')
 
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
+          echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "✅ Backend deployed successfully to: $SERVICE_URL"
 
-          echo "HTTP Status: $http_code"
-          echo "Response: $body"
+      - name: Health check
+        run: |
+          SERVICE_URL="${{ steps.deploy.outputs.service_url }}"
+          echo "Testing backend health endpoint..."
 
-          if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
-            echo "✅ Successfully triggered Harness deployment"
-            exit 0
+          # Wait a few seconds for service to be fully ready
+          sleep 10
+>>>>>>> Stashed changes
+
+          # Test health endpoint
+          if curl -f -s "${SERVICE_URL}/health" > /dev/null; then
+            echo "✅ Health check passed!"
+            curl -s "${SERVICE_URL}/health" | jq '.'
           else
-            echo "❌ Failed to trigger Harness deployment (HTTP $http_code)"
-            exit 1
+            echo "⚠️  Health check failed, but deployment may still be successful"
+            echo "Check logs: gcloud run services logs tail technology-risk-register --region=${{ secrets.GCP_REGION }}"
           fi
 
+<<<<<<< Updated upstream
       - name: Skip Harness trigger
         if: vars.HARNESS_WEBHOOK_URL == ''
         run: |
@@ -258,3 +339,76 @@ jobs:
           echo "Deployment artifacts ready:"
           echo "  Backend: ${{ needs.build-push-backend.outputs.image_tag }}"
           echo "  Frontend: Run ID ${{ needs.build-upload-frontend.outputs.artifact_run_id }}"
+=======
+    outputs:
+      service_url: ${{ steps.deploy.outputs.service_url }}
+
+  deploy-frontend:
+    name: Deploy Frontend to Cloud Storage
+    runs-on: ubuntu-latest
+    needs: [build-upload-frontend, deploy-backend]
+    if: success() && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: frontend-dist
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Upload to Cloud Storage
+        run: |
+          # Upload all files to Cloud Storage bucket
+          gsutil -m rsync -r -d frontend-dist gs://${{ secrets.GCP_ASSETS_BUCKET }}
+
+          echo "✅ Files uploaded to Cloud Storage"
+
+      - name: Set cache headers
+        run: |
+          # CSS files - cache for 1 year
+          gsutil -m setmeta -h "Cache-Control:public,max-age=31536000,immutable" \
+            "gs://${{ secrets.GCP_ASSETS_BUCKET }}/assets/*.css" || echo "No CSS files to set headers"
+
+          # JS files - cache for 1 year
+          gsutil -m setmeta -h "Cache-Control:public,max-age=31536000,immutable" \
+            "gs://${{ secrets.GCP_ASSETS_BUCKET }}/assets/*.js" || echo "No JS files to set headers"
+
+          # SVG files - cache for 1 year
+          gsutil -m setmeta -h "Cache-Control:public,max-age=31536000,immutable" \
+            "gs://${{ secrets.GCP_ASSETS_BUCKET }}/assets/*.svg" || echo "No SVG files to set headers"
+
+          # HTML files - cache for 1 hour
+          gsutil -m setmeta -h "Cache-Control:public,max-age=3600,must-revalidate" \
+            "gs://${{ secrets.GCP_ASSETS_BUCKET }}/*.html" || echo "No HTML files to set headers"
+
+          echo "✅ Cache headers configured"
+
+      - name: Output deployment info
+        run: |
+          echo "=========================================="
+          echo "  Deployment Complete! ✓"
+          echo "=========================================="
+          echo ""
+          echo "Backend:"
+          echo "  Service URL: ${{ needs.deploy-backend.outputs.service_url }}"
+          echo "  API Docs: ${{ needs.deploy-backend.outputs.service_url }}/docs"
+          echo "  Health: ${{ needs.deploy-backend.outputs.service_url }}/health"
+          echo ""
+          echo "Frontend:"
+          echo "  Storage Bucket: gs://${{ secrets.GCP_ASSETS_BUCKET }}"
+          echo "  Access via Load Balancer or configured domain"
+          echo ""
+          echo "Deployment Info:"
+          echo "  Commit: ${{ github.sha }}"
+          echo "  Triggered by: ${{ github.actor }}"
+          echo "  Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+>>>>>>> Stashed changes
