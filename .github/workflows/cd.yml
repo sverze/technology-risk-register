@@ -294,15 +294,6 @@ jobs:
             --max-instances 10 \
             --set-env-vars "GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},ENVIRONMENT=production,ALLOWED_ORIGINS=*,DATABASE_URL=sqlite:///./risk_register.db,GCP_BUCKET_NAME=${{ secrets.GCP_PROJECT_ID }}-technology-risk-register-database,AUTH_USERNAME=admin,AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }},AUTH_SECRET_KEY=${{ secrets.AUTH_SECRET_KEY }},ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}"
 
-<<<<<<< Updated upstream
-      - name: Trigger Harness webhook
-        if: vars.HARNESS_WEBHOOK_URL != ''
-        run: |
-          response=$(curl -s -w "\n%{http_code}" -X POST \
-            -H "Content-Type: application/json" \
-            -d @payload.json \
-            "${{ secrets.HARNESS_WEBHOOK_URL }}")
-=======
           # Get the service URL
           SERVICE_URL=$(gcloud run services describe technology-risk-register \
             --region=${{ secrets.GCP_REGION }} \
@@ -310,7 +301,6 @@ jobs:
 
           echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
           echo "✅ Backend deployed successfully to: $SERVICE_URL"
-
       - name: Health check
         run: |
           SERVICE_URL="${{ steps.deploy.outputs.service_url }}"
@@ -318,7 +308,6 @@ jobs:
 
           # Wait a few seconds for service to be fully ready
           sleep 10
->>>>>>> Stashed changes
 
           # Test health endpoint
           if curl -f -s "${SERVICE_URL}/health" > /dev/null; then
@@ -329,17 +318,6 @@ jobs:
             echo "Check logs: gcloud run services logs tail technology-risk-register --region=${{ secrets.GCP_REGION }}"
           fi
 
-<<<<<<< Updated upstream
-      - name: Skip Harness trigger
-        if: vars.HARNESS_WEBHOOK_URL == ''
-        run: |
-          echo "⚠️  HARNESS_WEBHOOK_URL not configured - skipping deployment trigger"
-          echo "Configure the secret in repository settings to enable automatic deployments"
-          echo ""
-          echo "Deployment artifacts ready:"
-          echo "  Backend: ${{ needs.build-push-backend.outputs.image_tag }}"
-          echo "  Frontend: Run ID ${{ needs.build-upload-frontend.outputs.artifact_run_id }}"
-=======
     outputs:
       service_url: ${{ steps.deploy.outputs.service_url }}
 
@@ -411,4 +389,3 @@ jobs:
           echo "  Triggered by: ${{ github.actor }}"
           echo "  Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
->>>>>>> Stashed changes
