@@ -314,7 +314,7 @@ jobs:
             --min-instances 0 \
             --max-instances 10 \
             --timeout=300 \
-            --startup-cpu-boost \
+            --cpu-boost \
             --cpu-throttling \
             --set-env-vars "GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},ENVIRONMENT=production,ALLOWED_ORIGINS=*,DATABASE_URL=sqlite:///./risk_register.db,GCP_BUCKET_NAME=${{ secrets.GCP_PROJECT_ID }}-technology-risk-register-database,AUTH_USERNAME=admin,AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }},AUTH_SECRET_KEY=${{ secrets.AUTH_SECRET_KEY }},ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}"
 
