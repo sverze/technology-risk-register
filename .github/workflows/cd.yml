@@ -190,9 +190,22 @@ jobs:
         id: image-tags
         run: |
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          GHCR_TAG="ghcr.io/${{ github.repository }}:main-$SHORT_SHA"
+          AR_TAG="${{ secrets.GCP_ARTIFACT_REGISTRY }}/technology-risk-register:main-$SHORT_SHA"
+
           echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
-          echo "ghcr_tag=ghcr.io/${{ github.repository }}:main-$SHORT_SHA" >> $GITHUB_OUTPUT
-          echo "ar_tag=${{ secrets.GCP_ARTIFACT_REGISTRY }}/technology-risk-register:main-$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "ghcr_tag=$GHCR_TAG" >> $GITHUB_OUTPUT
+          echo "ar_tag=$AR_TAG" >> $GITHUB_OUTPUT
+
+          # Debug output
+          echo "📦 Image tags generated:"
+          echo "  GHCR: $GHCR_TAG"
+          echo "  Artifact Registry: $AR_TAG"
+          echo "  Short SHA: $SHORT_SHA"
+
+          if [ -z "${{ secrets.GCP_ARTIFACT_REGISTRY }}" ]; then
+            echo "⚠️  WARNING: GCP_ARTIFACT_REGISTRY secret is empty!"
+          fi
 
     outputs:
       image_tag: ${{ steps.image-tags.outputs.ghcr_tag }}
@@ -282,8 +295,16 @@ jobs:
       - name: Deploy to Cloud Run
         id: deploy
         run: |
+          # Construct the image tag directly (more reliable than job outputs)
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          IMAGE_TAG="${{ secrets.GCP_ARTIFACT_REGISTRY }}/technology-risk-register:main-$SHORT_SHA"
+
+          echo "🚀 Deploying to Cloud Run"
+          echo "   Image: $IMAGE_TAG"
+          echo "   Commit: ${{ github.sha }} ($SHORT_SHA)"
+
           gcloud run deploy technology-risk-register \
-            --image ${{ needs.build-push-backend.outputs.ar_image_tag }} \
+            --image "$IMAGE_TAG" \
             --platform managed \
             --region ${{ secrets.GCP_REGION }} \
             --allow-unauthenticated \
