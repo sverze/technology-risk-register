@@ -28,18 +28,22 @@ def test_auth_routes_mounted_at_api_v1():
     # Auth routes should work at /api/v1/auth/login
     response = client.post(f"{settings.API_V1_STR}/auth/login")
 
-    # Should return 401 (unauthorized) or 422 (validation error), NOT 404
+    # Expected responses:
+    # - 401: Missing/invalid Authorization header (expected with no auth)
+    # - 422: Invalid request body format (FastAPI validation error)
+    # - 404: Route not found (ERROR - means route is not mounted correctly)
     assert response.status_code in [401, 422], (
         f"Auth route should exist at {settings.API_V1_STR}/auth/login. "
-        f"Got status {response.status_code}, expected 401 or 422."
+        f"Got status {response.status_code}, expected 401 or 422. "
+        f"Status 404 would indicate the route is not mounted at the correct path."
     )
 
 
 def test_api_prefix_configuration():
     """Verify API_V1_STR is set to /api/v1."""
-    assert (
-        settings.API_V1_STR == "/api/v1"
-    ), "API prefix must be /api/v1 to match frontend configuration. Frontend expects all API routes at /api/v1/*."
+    assert settings.API_V1_STR == "/api/v1", (
+        "API prefix must be /api/v1 to match frontend configuration. Frontend expects all API routes at /api/v1/*."
+    )
 
 
 def test_health_endpoint_at_root():
