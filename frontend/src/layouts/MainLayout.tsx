@@ -143,14 +143,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: 'grey.50' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: 'background.default' }}>
       {/* App Bar */}
       <AppBar
         position="fixed"
         elevation={1}
         sx={{
           zIndex: theme.zIndex.drawer + 1,
-          backgroundColor: 'white',
+          backgroundColor: 'background.paper',
           color: 'text.primary',
           borderBottom: '1px solid',
           borderBottomColor: 'divider',
@@ -236,10 +236,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             sx={{
               p: { xs: 2, sm: 3 },
               borderRadius: 2,
-              backgroundColor: 'white',
+              backgroundColor: 'background.paper',
               minHeight: 'calc(100vh - 120px)',
               border: '1px solid',
-              borderColor: 'grey.200'
+              borderColor: 'divider'
             }}
           >
             {children}
