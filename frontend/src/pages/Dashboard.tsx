@@ -564,7 +564,7 @@ export const Dashboard: React.FC = () => {
               </Box>
 
               {/* Action Items */}
-              <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Box sx={{ mt: 3, p: 2, bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50', borderRadius: 1 }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Next Actions
                 </Typography>
