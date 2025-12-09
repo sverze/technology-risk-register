@@ -11,7 +11,7 @@ This is a web application for managing technology risks with a dashboard view an
 ### Backend Development
 ```bash
 # Run the development server
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8008
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 
  # Run all unit tests (recommended)
 uv run pytest --ignore=tests/integration -v
@@ -53,13 +53,17 @@ docker-compose down -v
 
 # Access services:
 # - Frontend: http://localhost:3000
-# - Backend API: http://localhost:8008/api/v1
-# - API Docs: http://localhost:8008/docs
+# - Backend API: http://localhost:8080/api/v1
+# - API Docs: http://localhost:8080/docs
 ```
 
 ### GCP Deployment
 
-#### Automated Deployment (GitHub Actions - Recommended)
+**Primary Method: GitHub Actions (Automated)**
+
+All deployments to production should use the automated GitHub Actions pipeline. Manual scripts are available as fallback options only.
+
+#### Automated Deployment (GitHub Actions)
 
 **Prerequisites** (one-time setup):
 ```bash
@@ -99,27 +103,31 @@ gcloud run services describe technology-risk-register --region=us-central1
 # Go to: https://github.com/YOUR_REPO/actions
 ```
 
-#### Manual Deployment (Fallback)
+#### Manual Deployment (Emergency Fallback Only)
+
+**⚠️ Use only when GitHub Actions is unavailable or for local testing**
+
+The manual deployment scripts are retained for:
+- Emergency hotfixes when GitHub Actions is down
+- Local infrastructure testing
+- Manual Terraform operations (infrastructure is still managed locally)
 
 ```bash
-# Quick deployment to GCP (after setting up gcloud auth)
-./deploy.sh --project-id your-gcp-project-id
+# Manual backend deployment (emergency only)
+./deploy.sh --project-id your-gcp-project-id --skip-terraform
 
-# Deploy with custom settings
-./deploy.sh --project-id your-project --region europe-west1 --environment staging
+# Manual frontend deployment (emergency only)
+./deploy-frontend.sh --project-id your-gcp-project-id
 
-# Skip Terraform (if infrastructure already exists)
-./deploy.sh --project-id your-project --skip-terraform
-
-# Manual Terraform operations
+# Manual Terraform operations (infrastructure changes)
 cd terraform
 terraform init
 terraform plan -var="project_id=your-project-id"
 terraform apply -var="project_id=your-project-id"
-
-# Manual Cloud Run deployment
-make deploy  # (from terraform directory)
+cd ..
 ```
+
+**Note**: For regular deployments, always use GitHub Actions by pushing to the `main` branch.
 
 #### Deployment Architecture
 
@@ -209,7 +217,6 @@ make deploy  # (from terraform directory)
 - Use remote state backend (GCS, S3) for production deployments
 - Keep sensitive values in CI/CD secrets or external key management
 - Never commit state files - they contain actual resource identifiers and configuration
-- The server is running on port 8080 not 8008 which is what has come up a few times
 - Run all python unit tests before any commit using 'uv run pytest --ignore=tests/integration -v'
-- The server port is 8080, it is NOT 8008
 - The Git SSH config you must use is github.com-personal, prepend this on all interactions with GitHub
+- The server runs on port 8080 in all environments (local, docker, Cloud Run)
