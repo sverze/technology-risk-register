@@ -48,13 +48,13 @@ A modern web application for managing technology risks with executive dashboard 
 
 4. **Start the development server**
    ```bash
-   uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
    ```
 
 5. **Access the API**
-   - API Documentation: http://localhost:8000/docs
-   - Health Check: http://localhost:8000/health
-   - Dashboard Data: http://localhost:8000/api/v1/dashboard
+   - API Documentation: http://localhost:8080/docs
+   - Health Check: http://localhost:8080/health
+   - Dashboard Data: http://localhost:8080/api/v1/dashboard
 
 ### Docker Development
 
@@ -118,19 +118,19 @@ Integration tests verify end-to-end API functionality against a live server inst
 uv sync --group test
 
 # Start the API server (in separate terminal or background)
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8080
 
 # Option 1: Use the test runner script (recommended)
 python run_integration_tests.py
 
 # Option 2: Test against custom URL
-python run_integration_tests.py --url http://localhost:8001
+python run_integration_tests.py --url http://localhost:8080
 
 # Option 3: Skip health check
 python run_integration_tests.py --no-health-check
 
 # Option 4: Direct pytest execution
-API_BASE_URL=http://localhost:8000 uv run pytest tests/integration/ -v
+API_BASE_URL=http://localhost:8080 uv run pytest tests/integration/ -v
 ```
 
 **Docker Integration Testing:**
@@ -223,78 +223,277 @@ When you open a pull request, the following checks run automatically:
 All checks must pass before merging to `main`.
 
 ### Automated Deployment (CD)
-On push to `main` branch, the pipeline:
-1. Runs all quality checks and tests
-2. Builds and pushes Docker image to `ghcr.io/sverze/technology-risk-register`
-3. Builds frontend and uploads as artifact
-4. Triggers Harness deployment webhook with metadata
+On push to `main` branch, the pipeline automatically:
+1. **Quality Checks**: Runs all linting, type checking, and tests
+2. **Build Backend**: Builds Docker image and pushes to both:
+   - GitHub Container Registry: `ghcr.io/sverze/technology-risk-register:latest`
+   - GCP Artifact Registry: `[REGION]-docker.pkg.dev/[PROJECT]/technology-risk-register-repo`
+3. **Deploy Backend**: Deploys to Cloud Run with environment variables
+4. **Build Frontend**: Builds React app with Cloud Run API URL
+5. **Verify Build**: Validates frontend contains correct `/api/v1` prefix
+6. **Deploy Frontend**: Uploads static files to Cloud Storage bucket
+7. **Health Check**: Verifies backend deployment is healthy
 
-**Manual Deployment:**
-You can trigger builds manually from the GitHub Actions UI with optional environment selection (production/staging).
-
-**Container Registry:**
-- Backend images: `ghcr.io/sverze/technology-risk-register:latest`
-- Tagged with commit SHA: `ghcr.io/sverze/technology-risk-register:main-abc1234`
+**Container Images:**
+- Latest: `ghcr.io/sverze/technology-risk-register:latest`
+- By commit: `ghcr.io/sverze/technology-risk-register:main-abc1234`
+- By SHA: `ghcr.io/sverze/technology-risk-register:sha-abc1234`
 
 **Setup Requirements:**
-1. GitHub Settings → Actions → Workflow permissions → "Read and write permissions"
-2. Add repository secret: `HARNESS_WEBHOOK_URL` (for automated deployments)
+See [GCP Deployment Setup](#gcp-cloud-run-production) section below for GitHub secrets configuration.
 
 ## Deployment
 
 ### Local Development
 The application runs with SQLite database file locally. Database is automatically created and seeded with dropdown values on startup.
 
+```bash
+# Start backend only
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+
+# Access at http://localhost:8080/docs
+```
+
+### Docker Desktop Deployment
+
+Deploy the full stack (backend + frontend) locally using Docker Desktop.
+
+#### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- `.env` file configured with `ANTHROPIC_API_KEY` (see [ENV_SETUP.md](./ENV_SETUP.md))
+
+#### Deployment Steps
+
+1. **Start Docker Desktop**
+   - Ensure Docker Desktop is running
+   - On macOS/Windows: Look for Docker icon in system tray
+   - On Linux: `sudo systemctl start docker`
+
+2. **Configure Environment** (optional, for AI chat feature)
+   ```bash
+   # Copy example environment file
+   cp .env.example .env
+
+   # Edit and add your Anthropic API key
+   nano .env  # or use your preferred editor
+   ```
+
+3. **Build and Start Containers**
+   ```bash
+   # Build images and start all services
+   docker-compose up --build -d
+
+   # View logs (optional)
+   docker-compose logs -f
+   ```
+
+4. **Access the Application**
+   - **Frontend**: http://localhost:3000
+   - **Backend API**: http://localhost:8080/api/v1
+   - **API Documentation**: http://localhost:8080/docs
+   - **Health Check**: http://localhost:8080/health
+
+5. **Verify Deployment**
+   ```bash
+   # Check containers are running
+   docker-compose ps
+
+   # Test backend health
+   curl http://localhost:8080/health
+
+   # View backend logs
+   docker-compose logs backend
+
+   # View frontend logs
+   docker-compose logs frontend
+   ```
+
+#### Docker Commands
+
+```bash
+# Stop containers (preserves data)
+docker-compose stop
+
+# Start stopped containers
+docker-compose start
+
+# Restart containers (apply code changes)
+docker-compose restart
+
+# Stop and remove containers (clean slate)
+docker-compose down
+
+# Stop and remove containers + volumes (delete database)
+docker-compose down -v
+
+# Rebuild after code changes
+docker-compose up --build -d
+
+# View resource usage
+docker stats
+```
+
+#### Troubleshooting Docker Desktop
+
+**Port Already in Use:**
+```bash
+# Find what's using port 8080
+lsof -i :8080  # macOS/Linux
+netstat -ano | findstr :8080  # Windows
+
+# Kill the process or change docker-compose.yml ports
+```
+
+**Container Won't Start:**
+```bash
+# Check logs for errors
+docker-compose logs backend
+
+# Remove containers and start fresh
+docker-compose down -v
+docker-compose up --build
+```
+
+**Database Issues:**
+```bash
+# Reset database (warning: deletes all data)
+docker-compose down -v
+docker-compose up -d
+
+# The database will be recreated and seeded automatically
+```
+
+**Performance Issues:**
+```bash
+# Check Docker Desktop resource allocation
+# Settings → Resources → adjust CPU/Memory
+
+# Recommended: 4GB RAM, 2 CPUs minimum
+```
+
 ### GCP Cloud Run (Production)
 
-**Quick Deployment:**
-```bash
-# Deploy backend infrastructure and API
-./deploy.sh --project-id your-gcp-project-id
+**⭐ Primary Deployment Method: GitHub Actions (Automated)**
 
-# Deploy frontend to Cloud Storage + Load Balancer
-./deploy-frontend.sh --project-id your-gcp-project-id
+All production deployments should use the automated GitHub Actions pipeline. Simply push to the `main` branch to trigger deployment.
 
-# Custom region and environment
-./deploy.sh --project-id your-project --region europe-west1 --environment staging
-```
+#### Automated Deployment Setup (One-Time)
 
-**Architecture:**
-- **Backend**: Cloud Run (FastAPI API, HTTPS)
-- **Frontend**: Cloud Storage + Global Load Balancer (React SPA, HTTP)
-- **Database**: SQLite file with Cloud Storage sync
-- **Container Registry**: Artifact Registry for Docker images
-- **Infrastructure**: Terraform IaC for reproducible deployments
+1. **Create GCP Service Account**
+   ```bash
+   ./setup-gcp-service-account.sh --project-id your-gcp-project-id
+   ```
 
-**Deployed Services:**
-- **Frontend URL**: `http://[LOAD_BALANCER_IP]/` (shown after deployment)
-- **Backend API**: `https://[CLOUD_RUN_URL]/api/v1/` (HTTPS with automatic SSL)
-- **API Documentation**: `https://[CLOUD_RUN_URL]/docs`
+2. **Configure GitHub Secrets**
+
+   Go to GitHub Repository → Settings → Secrets and variables → Actions, and add:
+
+   | Secret Name | Value | How to Get |
+   |-------------|-------|------------|
+   | `GCP_PROJECT_ID` | your-gcp-project-id | GCP Console → Project Info |
+   | `GCP_SA_KEY` | {...} | Service account JSON key from step 1 |
+   | `GCP_REGION` | us-central1 | Your preferred GCP region |
+   | `GCP_ARTIFACT_REGISTRY` | us-central1-docker.pkg.dev/... | Run: `cd terraform && terraform output container_registry` |
+   | `GCP_ASSETS_BUCKET` | your-project-assets | Run: `cd terraform && terraform output assets_bucket_name` |
+   | `AUTH_PASSWORD` | SecurePassword123! | Generate a secure password |
+   | `AUTH_SECRET_KEY` | [32+ char string] | Run: `openssl rand -hex 32` |
+   | `ANTHROPIC_API_KEY` | sk-ant-... | Get from https://console.anthropic.com |
+
+3. **Deploy Infrastructure** (if not already deployed)
+   ```bash
+   cd terraform
+   terraform init
+   terraform plan -var="project_id=your-gcp-project-id"
+   terraform apply -var="project_id=your-gcp-project-id"
+   cd ..
+   ```
+
+4. **Trigger Deployment**
+   ```bash
+   # Push to main branch to trigger automated deployment
+   git push origin main
+
+   # Monitor deployment: https://github.com/YOUR_REPO/actions
+   ```
+
+#### Deployment Architecture
+
+**Backend (Cloud Run):**
+- Docker image from GCP Artifact Registry
+- Auto-scaling: 0-10 instances
+- Memory: 512Mi, CPU: 1
+- Port: 8080
+- Database: SQLite synced to Cloud Storage
+
+**Frontend (Cloud Storage + Load Balancer):**
+- Static files hosted in Cloud Storage bucket
+- CDN caching: 1 year for assets, 1 hour for HTML
+- Served via HTTP Load Balancer with API proxying
 
 **Features:**
-- **Separated Architecture**: Independent frontend and backend scaling
-- **Auto-scaling**: Backend scales 0-10 instances based on traffic
-- **Database Sync**: SQLite automatically synced with Cloud Storage
-- **CORS Configured**: Frontend can securely call HTTPS API
-- **Pay-per-use**: Only pay when processing requests (scales to zero)
-- **Global CDN**: Load Balancer provides edge caching for frontend
+- ✅ Automatic deployment on push to main
+- ✅ Zero-downtime deployments
+- ✅ Auto-scaling (pay-per-use)
+- ✅ HTTPS with automatic SSL
+- ✅ Health checks and validation
+- ✅ Database persistence across deploys
 
-**Destroy Infrastructure:**
+#### Monitoring Production
+
 ```bash
-cd terraform
-terraform destroy
+# View Cloud Run logs
+gcloud run services logs tail technology-risk-register --region=us-central1
+
+# Check deployment status
+gcloud run services describe technology-risk-register --region=us-central1
+
+# View GitHub Actions workflow runs
+# https://github.com/YOUR_REPO/actions
 ```
 
-📖 **[Complete Deployment Guide](./DEPLOYMENT.md)** - Detailed instructions, troubleshooting, and advanced configuration
+### Emergency Manual Deployment
+
+**⚠️ Use ONLY when GitHub Actions is unavailable or for emergency hotfixes**
+
+The manual deployment scripts are retained as fallback options:
+
+```bash
+# Manual backend deployment (skip if GitHub Actions works)
+./deploy.sh --project-id your-gcp-project-id --skip-terraform
+
+# Manual frontend deployment (skip if GitHub Actions works)
+./deploy-frontend.sh --project-id your-gcp-project-id
+
+# Manual Terraform operations (infrastructure changes)
+cd terraform
+terraform apply -var="project_id=your-gcp-project-id"
+cd ..
+```
+
+**When to use manual scripts:**
+- GitHub Actions is down or broken
+- Testing infrastructure changes locally
+- Emergency hotfix that can't wait for CI/CD
+- Running Terraform for infrastructure updates
+
+**Important**: For regular deployments, always use GitHub Actions by pushing to `main`.
 
 ### Environment Variables
+
+**Local Development:**
 ```bash
 DATABASE_URL=sqlite:///./risk_register.db
-ALLOWED_ORIGINS=["https://your-domain.com"]
-GCP_PROJECT_ID=your-project-id
-GCP_BUCKET_NAME=your-bucket-name
-ENVIRONMENT=prod
+ALLOWED_ORIGINS=["http://localhost:3000"]
+ANTHROPIC_API_KEY=sk-ant-...
 ```
+
+**Docker Compose:**
+See `.env.example` for configuration template.
+
+**Cloud Run Production:**
+Configured automatically by GitHub Actions CD workflow from repository secrets.
+
+📖 **[Complete Deployment Guide](./DEPLOYMENT.md)** - Advanced configuration and troubleshooting
 
 ## Contributing
 

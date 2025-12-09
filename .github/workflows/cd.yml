@@ -241,8 +241,9 @@ jobs:
             SERVICE_URL="https://technology-risk-register-placeholder.a.run.app"
           fi
 
-          echo "backend_url=$SERVICE_URL" >> $GITHUB_OUTPUT
-          echo "Building frontend with API base URL: $SERVICE_URL"
+          # Append /api/v1 to the service URL for frontend API calls
+          echo "backend_url=${SERVICE_URL}/api/v1" >> $GITHUB_OUTPUT
+          echo "Building frontend with API base URL: ${SERVICE_URL}/api/v1"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -260,6 +261,28 @@ jobs:
           VITE_API_BASE_URL: ${{ steps.get-backend-url.outputs.backend_url }}
         run: npm run build
         working-directory: frontend
+
+      - name: Verify frontend API configuration
+        run: |
+          echo "Verifying frontend was built with correct API base URL..."
+
+          # Check that built files contain the /api/v1 prefix
+          if grep -r "/api/v1" frontend/dist/assets/*.js > /dev/null 2>&1; then
+            echo "✅ Frontend built with correct API base URL including /api/v1"
+
+            # Show a sample of the API URL found in built files (for debugging)
+            SAMPLE=$(grep -oh "https://[^\"]*api/v1" frontend/dist/assets/*.js | head -1 || echo "")
+            if [ -n "$SAMPLE" ]; then
+              echo "   Sample API URL found: $SAMPLE"
+            fi
+          else
+            echo "❌ ERROR: Frontend built without /api/v1 prefix in API URLs"
+            echo "This will cause 404 errors on all API requests!"
+            echo ""
+            echo "Expected: API calls to include /api/v1 (e.g., https://...a.run.app/api/v1/auth/login)"
+            echo "Debugging: Check VITE_API_BASE_URL was set correctly during build"
+            exit 1
+          fi
 
       - name: Upload frontend artifact
         uses: actions/upload-artifact@v4

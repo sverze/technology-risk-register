@@ -311,7 +311,7 @@ export const healthApi = {
   // Health check endpoint
   getHealth: async (): Promise<{ status: string }> => {
     // Health endpoint is at root level, not under /api/v1
-    const url = `${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:8008'}/health`;
+    const url = `${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:8080'}/health`;
     const response = await fetch(url);
     if (!response.ok) {
       throw new ApiError(response.status, `HTTP ${response.status}`);
