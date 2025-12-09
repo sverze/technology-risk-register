@@ -41,9 +41,9 @@ def test_auth_routes_mounted_at_api_v1():
 
 def test_api_prefix_configuration():
     """Verify API_V1_STR is set to /api/v1."""
-    assert settings.API_V1_STR == "/api/v1", (
-        "API prefix must be /api/v1 to match frontend configuration. Frontend expects all API routes at /api/v1/*."
-    )
+    assert (
+        settings.API_V1_STR == "/api/v1"
+    ), "API prefix must be /api/v1 to match frontend configuration. Frontend expects all API routes at /api/v1/*."
 
 
 def test_health_endpoint_at_root():
