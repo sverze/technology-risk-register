@@ -497,7 +497,7 @@ export const RiskList: React.FC = () => {
         }}
       >
         <Table sx={{ minWidth: isMobile ? 350 : isTablet ? 600 : 800, tableLayout: 'fixed' }}>
-          <TableHead sx={{ backgroundColor: 'grey.50' }}>
+          <TableHead sx={{ backgroundColor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50' }}>
             <TableRow>
               {/* Risk ID - Always visible */}
               <TableCell

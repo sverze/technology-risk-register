@@ -15,6 +15,7 @@ import {
   useTheme,
   useMediaQuery,
   Paper,
+  Tooltip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -23,8 +24,11 @@ import {
   Add as AddIcon,
   Chat as ChatIcon,
   Close as CloseIcon,
+  LightMode,
+  DarkMode,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useThemeMode } from '@/hooks/useThemeMode';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -43,6 +47,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+  const { mode, toggleTheme } = useThemeMode();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -58,9 +63,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const drawer = (
     <Box sx={{ width: DRAWER_WIDTH, height: '100%' }}>
       {/* Drawer Header */}
-      <Box sx={{ 
+      <Box sx={{
         height: 80,
-        background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-end',
@@ -73,7 +78,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </IconButton>
         )}
       </Box>
-      
+
       {/* Navigation List */}
       <List sx={{ p: 2 }}>
         {navigationItems.map((item) => {
@@ -103,8 +108,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 >
                   {item.icon}
                 </ListItemIcon>
-                <ListItemText 
-                  primary={item.text} 
+                <ListItemText
+                  primary={item.text}
                   primaryTypographyProps={{
                     fontWeight: isActive ? 600 : 400,
                     fontSize: '0.95rem'
@@ -115,13 +120,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           );
         })}
       </List>
-      
+
       {/* Footer */}
-      <Box sx={{ 
-        position: 'absolute', 
-        bottom: 0, 
-        left: 0, 
-        right: 0, 
+      <Box sx={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         p: 2,
         borderTop: '1px solid',
         borderColor: 'divider',
@@ -138,14 +143,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: 'grey.50' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: 'background.default' }}>
       {/* App Bar */}
       <AppBar
         position="fixed"
         elevation={1}
         sx={{
           zIndex: theme.zIndex.drawer + 1,
-          backgroundColor: 'white',
+          backgroundColor: 'background.paper',
           color: 'text.primary',
           borderBottom: '1px solid',
           borderBottomColor: 'divider',
@@ -157,7 +162,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             aria-label="toggle drawer"
             onClick={handleDrawerToggle}
             edge="start"
-            sx={{ 
+            sx={{
               mr: 2,
               '&:hover': {
                 backgroundColor: 'primary.light',
@@ -170,6 +175,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600 }}>
             Technology Risk Register
           </Typography>
+          <Tooltip title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+            <IconButton
+              onClick={toggleTheme}
+              color="inherit"
+              aria-label="toggle theme"
+              sx={{ ml: 'auto' }}
+            >
+              {mode === 'light' ? <DarkMode /> : <LightMode />}
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
 
@@ -186,7 +201,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           elevation: 8,
           sx: {
             width: DRAWER_WIDTH,
-            background: 'linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%)',
+            background: theme.palette.mode === 'dark'
+              ? `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`
+              : 'linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%)',
             border: 'none',
             position: 'relative',
           }
@@ -206,23 +223,23 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         }}
       >
         <Toolbar /> {/* Spacer for AppBar */}
-        <Container 
-          maxWidth="xl" 
-          sx={{ 
-            flexGrow: 1, 
+        <Container
+          maxWidth="xl"
+          sx={{
+            flexGrow: 1,
             py: 3,
             px: { xs: 2, sm: 3 } // Responsive padding
           }}
         >
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              p: { xs: 2, sm: 3 }, 
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 2, sm: 3 },
               borderRadius: 2,
-              backgroundColor: 'white',
+              backgroundColor: 'background.paper',
               minHeight: 'calc(100vh - 120px)',
               border: '1px solid',
-              borderColor: 'grey.200'
+              borderColor: 'divider'
             }}
           >
             {children}

@@ -14,6 +14,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  useTheme,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -39,6 +40,7 @@ import {
 import { useDashboard } from '@/hooks/useDashboard';
 
 export const Dashboard: React.FC = () => {
+  const theme = useTheme();
   const { data: dashboardData, isLoading, error } = useDashboard();
 
   if (isLoading) {
@@ -102,17 +104,17 @@ export const Dashboard: React.FC = () => {
 
   // Prepare chart data for Business Disruption Net Exposure
   const severityChartData = [
-    { name: 'Critical (15-16)', count: data.risk_severity_distribution.critical, color: '#f44336' },
-    { name: 'High (8-12)', count: data.risk_severity_distribution.high, color: '#ff9800' },
-    { name: 'Medium (4-6)', count: data.risk_severity_distribution.medium, color: '#2196f3' },
-    { name: 'Low (1-3)', count: data.risk_severity_distribution.low, color: '#4caf50' },
+    { name: 'Critical (15-16)', count: data.risk_severity_distribution.critical, color: theme.chartColors.critical },
+    { name: 'High (8-12)', count: data.risk_severity_distribution.high, color: theme.chartColors.high },
+    { name: 'Medium (4-6)', count: data.risk_severity_distribution.medium, color: theme.chartColors.medium },
+    { name: 'Low (1-3)', count: data.risk_severity_distribution.low, color: theme.chartColors.low },
   ];
 
   const responseStrategyData = [
-    { name: 'Mitigate', value: data.risk_response_breakdown.mitigate, color: '#2196f3' },
-    { name: 'Accept', value: data.risk_response_breakdown.accept, color: '#ff9800' },
-    { name: 'Transfer', value: data.risk_response_breakdown.transfer, color: '#9c27b0' },
-    { name: 'Avoid', value: data.risk_response_breakdown.avoid, color: '#4caf50' },
+    { name: 'Mitigate', value: data.risk_response_breakdown.mitigate, color: theme.chartColors.mitigate },
+    { name: 'Accept', value: data.risk_response_breakdown.accept, color: theme.chartColors.accept },
+    { name: 'Transfer', value: data.risk_response_breakdown.transfer, color: theme.chartColors.transfer },
+    { name: 'Avoid', value: data.risk_response_breakdown.avoid, color: theme.chartColors.avoid },
   ];
 
   const getActivityStatus = () => {
@@ -237,17 +239,30 @@ export const Dashboard: React.FC = () => {
               </Typography>
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={severityChartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={theme.palette.mode === 'dark' ? '#424242' : '#e0e0e0'}
+                  />
                   <XAxis
                     dataKey="name"
                     angle={-45}
                     textAnchor="end"
                     height={50}
                     interval={0}
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                    stroke={theme.palette.text.secondary}
                   />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
+                  <YAxis
+                    tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                    stroke={theme.palette.text.secondary}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: theme.palette.background.paper,
+                      border: `1px solid ${theme.palette.divider}`,
+                      color: theme.palette.text.primary,
+                    }}
+                  />
                   <Bar dataKey="count">
                     {severityChartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -275,15 +290,24 @@ export const Dashboard: React.FC = () => {
                     labelLine={false}
                     label={(entry: { name?: string; percent?: number }) => `${entry.name || ''} ${entry.percent ? (entry.percent * 100).toFixed(0) + '%' : ''}`}
                     outerRadius={80}
-                    fill="#8884d8"
                     dataKey="value"
                   >
                     {responseStrategyData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
-                  <Legend />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: theme.palette.background.paper,
+                      border: `1px solid ${theme.palette.divider}`,
+                      color: theme.palette.text.primary,
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{
+                      color: theme.palette.text.primary,
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -540,7 +564,7 @@ export const Dashboard: React.FC = () => {
               </Box>
 
               {/* Action Items */}
-              <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Box sx={{ mt: 3, p: 2, bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50', borderRadius: 1 }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Next Actions
                 </Typography>
