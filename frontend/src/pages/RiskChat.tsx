@@ -127,7 +127,7 @@ export const RiskChat: React.FC = () => {
           p: 2,
           mb: 2,
           overflowY: 'auto',
-          backgroundColor: 'grey.50',
+          backgroundColor: 'background.default',
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: 2,
