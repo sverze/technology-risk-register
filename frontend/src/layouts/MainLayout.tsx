@@ -26,9 +26,11 @@ import {
   Close as CloseIcon,
   LightMode,
   DarkMode,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useThemeMode } from '@/hooks/useThemeMode';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -48,6 +50,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
   const theme = useTheme();
   const { mode, toggleTheme } = useThemeMode();
+  const { logout } = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -58,6 +61,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const handleNavigate = (path: string) => {
     navigate(path);
     setDrawerOpen(false); // Always close drawer after navigation
+  };
+
+  const handleLogout = async () => {
+    setDrawerOpen(false);
+    await logout();
   };
 
   const drawer = (
@@ -119,6 +127,41 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </ListItem>
           );
         })}
+
+        {/* Sign Out Button */}
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton
+            onClick={handleLogout}
+            sx={{
+              borderRadius: 2,
+              py: 1.5,
+              px: 2,
+              minHeight: 56,
+              backgroundColor: 'transparent',
+              color: 'text.primary',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+              },
+              transition: 'all 0.2s ease-in-out',
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                minWidth: 40,
+                color: 'error.main',
+              }}
+            >
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Sign Out"
+              primaryTypographyProps={{
+                fontWeight: 400,
+                fontSize: '0.95rem'
+              }}
+            />
+          </ListItemButton>
+        </ListItem>
       </List>
 
       {/* Footer */}
