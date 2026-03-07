@@ -10,20 +10,40 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 WORKDIR /app
 
+# Optionally install a corporate CA certificate (e.g. for GlobalProtect SASE SSL inspection).
+# Mount the cert as a build secret: --secret id=ca_cert,src=/path/to/cert.pem
+RUN --mount=type=secret,id=ca_cert \
+    if [ -f /run/secrets/ca_cert ]; then \
+        apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
+        rm -rf /var/lib/apt/lists/* && \
+        cp /run/secrets/ca_cert /usr/local/share/ca-certificates/corporate-ca.crt && \
+        update-ca-certificates; \
+    fi
+
 # Copy dependency files and create dummy README
 COPY pyproject.toml uv.lock ./
 RUN echo "# Technology Risk Register" > README.md
 
-# Create virtual environment and install dependencies
-RUN uv sync --frozen --no-dev
+# Create virtual environment and install dependencies.
+# UV_NATIVE_TLS=1 makes uv use OpenSSL (system trust store) instead of bundled rustls,
+# so it respects the corporate CA cert installed above.
+RUN UV_NATIVE_TLS=1 uv sync --frozen --no-dev
 
 # Production stage
 FROM python:3.12-slim as production
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y curl && \
+    apt-get install -y curl ca-certificates && \
     rm -rf /var/lib/apt/lists/*
+
+# Optionally install corporate CA cert for runtime package operations (e.g. uv run).
+# Same secret as the builder stage — no-op in CI where the secret is absent.
+RUN --mount=type=secret,id=ca_cert \
+    if [ -f /run/secrets/ca_cert ]; then \
+        cp /run/secrets/ca_cert /usr/local/share/ca-certificates/corporate-ca.crt && \
+        update-ca-certificates; \
+    fi
 
 # Install UV
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv

@@ -335,6 +335,47 @@ docker stats
 
 #### Troubleshooting Docker Desktop
 
+**Corporate SSL / SASE Proxy (e.g. Palo Alto GlobalProtect):**
+
+If your organisation uses SSL inspection (a SASE or corporate proxy that intercepts HTTPS traffic with its own CA certificate), Docker builds will fail with `invalid peer certificate: UnknownIssuer` when package managers try to download dependencies.
+
+The fix is a local `docker-compose.override.yml` file that injects your corporate CA cert into the build as a [BuildKit secret](https://docs.docker.com/build/building/secrets/) — so it is never baked into any image layer — and passes the required env vars at runtime.
+
+1. **Create `docker-compose.override.yml`** in the project root (this file is gitignored):
+   ```yaml
+   services:
+     backend:
+       build:
+         secrets:
+           - ca_cert
+       environment:
+         - UV_NATIVE_TLS=1
+     frontend:
+       build:
+         secrets:
+           - ca_cert
+
+   secrets:
+     ca_cert:
+       file: /path/to/your/corporate-ca.pem
+   ```
+   Replace `/path/to/your/corporate-ca.pem` with the path to your corporate CA bundle. On macOS with Homebrew this is typically `/opt/homebrew/etc/ca-certificates/cert.pem`.
+
+2. **Run as normal** — Docker Compose automatically merges override files:
+   ```bash
+   docker-compose up --build
+   ```
+
+**How it works per language:**
+
+| Layer | Mechanism |
+|---|---|
+| Python `uv` (build) | Cert installed into system CA store via `update-ca-certificates`; `UV_NATIVE_TLS=1` switches uv from its bundled `rustls` to OpenSSL (which reads the system store) |
+| Python `uv` (runtime) | Cert baked into production image during build; `UV_NATIVE_TLS=1` env var set at runtime |
+| Node `npm` (build) | `NODE_EXTRA_CA_CERTS` env var points npm at the mounted secret cert |
+
+There is no single Docker Desktop setting that fixes this globally — each language toolchain has its own TLS stack and requires its own configuration.
+
 **Port Already in Use:**
 ```bash
 # Find what's using port 8080

@@ -177,6 +177,7 @@ Thumbs.db
 
 # Docker
 .dockerignore
+docker-compose.override.yml
 
 # Node.js (if frontend is added later)
 node_modules/
