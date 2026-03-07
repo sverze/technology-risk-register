@@ -113,6 +113,7 @@ __pypackages__/
 # Environments
 .env
 .env.*
+!.env.example
 .venv
 
 # Spyder project settings
